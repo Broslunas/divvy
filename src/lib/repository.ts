@@ -1,8 +1,9 @@
 import crypto from 'crypto';
 import { connectDB } from './db';
 import { fallbackDb } from './dbFallback';
-import { MongoUser, MongoGroup, MongoExpense } from './models';
+import { MongoUser, MongoGroup, MongoExpense, MongoNotification, MongoPushSubscription } from './models';
 import type { User, Group, Expense } from '@/types';
+import type { Notification, PushSubscription } from '@/types/notification';
 
 // Helper to generate a random 8-character invite code
 export function generateInviteCode(): string {
@@ -249,6 +250,151 @@ export const repository = {
         }
       } else {
         return fallbackDb.expenses.update(id, updates);
+      }
+    }
+  },
+
+  notifications: {
+    async getById(id: string): Promise<Notification | null> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const notif = await MongoNotification.findById(id);
+          return notif ? (notif.toJSON() as Notification) : null;
+        } catch {
+          return null;
+        }
+      } else {
+        return fallbackDb.notifications.getById(id);
+      }
+    },
+
+    async getUserNotifications(userId: string): Promise<Notification[]> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        const notifs = await MongoNotification.find({ userId }).sort({ createdAt: -1 });
+        return notifs.map(n => n.toJSON() as Notification);
+      } else {
+        const list = await fallbackDb.notifications.findMany(n => n.userId === userId);
+        return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+    },
+
+    async create(notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>): Promise<Notification> {
+      const isConnected = await connectDB();
+      const createdAt = new Date().toISOString();
+      if (isConnected) {
+        const newNotif = await MongoNotification.create({
+          ...notification,
+          isRead: false,
+          createdAt
+        });
+        return newNotif.toJSON() as Notification;
+      } else {
+        const id = generateId();
+        const newNotif: Notification = {
+          id,
+          ...notification,
+          isRead: false,
+          createdAt
+        };
+        return fallbackDb.notifications.create(newNotif);
+      }
+    },
+
+    async update(id: string, updates: Partial<Notification>): Promise<Notification | null> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const notif = await MongoNotification.findByIdAndUpdate(id, updates, { new: true });
+          return notif ? (notif.toJSON() as Notification) : null;
+        } catch {
+          return null;
+        }
+      } else {
+        return fallbackDb.notifications.update(id, updates);
+      }
+    },
+
+    async markAllAsRead(userId: string): Promise<boolean> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        await MongoNotification.updateMany({ userId, isRead: false }, { isRead: true });
+        return true;
+      } else {
+        const list = await fallbackDb.notifications.findMany(n => n.userId === userId && !n.isRead);
+        for (const n of list) {
+          await fallbackDb.notifications.update(n.id, { isRead: true });
+        }
+        return true;
+      }
+    },
+
+    async clearAll(userId: string): Promise<boolean> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        await MongoNotification.deleteMany({ userId });
+        return true;
+      } else {
+        const list = await fallbackDb.notifications.findMany(n => n.userId === userId);
+        for (const n of list) {
+          await fallbackDb.notifications.delete(n.id);
+        }
+        return true;
+      }
+    }
+  },
+
+  pushSubscriptions: {
+    async create(subscription: Omit<PushSubscription, 'id' | 'createdAt'>): Promise<PushSubscription> {
+      const isConnected = await connectDB();
+      const createdAt = new Date().toISOString();
+      if (isConnected) {
+        await MongoPushSubscription.deleteMany({ userId: subscription.userId, endpoint: subscription.endpoint });
+        const newSub = await MongoPushSubscription.create({
+          ...subscription,
+          createdAt
+        });
+        return newSub.toJSON() as PushSubscription;
+      } else {
+        const existing = await fallbackDb.pushSubscriptions.findMany(
+          s => s.userId === subscription.userId && s.endpoint === subscription.endpoint
+        );
+        for (const sub of existing) {
+          await fallbackDb.pushSubscriptions.delete(sub.id);
+        }
+        const id = generateId();
+        const newSub: PushSubscription = {
+          id,
+          ...subscription,
+          createdAt
+        };
+        return fallbackDb.pushSubscriptions.create(newSub);
+      }
+    },
+
+    async getByUser(userId: string): Promise<PushSubscription[]> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        const subs = await MongoPushSubscription.find({ userId });
+        return subs.map(s => s.toJSON() as PushSubscription);
+      } else {
+        return fallbackDb.pushSubscriptions.findMany(s => s.userId === userId);
+      }
+    },
+
+    async deleteByEndpoint(userId: string, endpoint: string): Promise<boolean> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        const result = await MongoPushSubscription.deleteMany({ userId, endpoint });
+        return result.deletedCount > 0;
+      } else {
+        const subs = await fallbackDb.pushSubscriptions.findMany(s => s.userId === userId && s.endpoint === endpoint);
+        if (subs.length === 0) return false;
+        for (const sub of subs) {
+          await fallbackDb.pushSubscriptions.delete(sub.id);
+        }
+        return true;
       }
     }
   }

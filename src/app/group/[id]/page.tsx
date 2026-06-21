@@ -15,6 +15,7 @@ import ExpenseCharts from '@/components/ExpenseCharts';
 import GroupNotes from '@/components/GroupNotes';
 import BudgetProgress from '@/components/BudgetProgress';
 import PwaPrompt from '@/components/PwaPrompt';
+import NotificationCenter from '@/components/NotificationCenter';
 import type { Group, Expense, User } from '@/types';
 import styles from './group.module.css';
 
@@ -468,6 +469,9 @@ export default function GroupDetailPage({ params }: PageProps) {
           <span className={styles.memberSummary}>
             {members.length} miembros • Cód: {group.inviteCode}
           </span>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+          <NotificationCenter />
         </div>
       </header>
 

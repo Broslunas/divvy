@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive } from 'lucide-react';
 import { calculateBalances } from '@/lib/settlement';
 import type { Group, User } from '@/types';
+import NotificationCenter from '@/components/NotificationCenter';
 import styles from './page.module.css';
 
 export default function Dashboard() {
@@ -249,6 +250,7 @@ export default function Dashboard() {
           <h1 className={styles.brandName}>Div<span>vy</span></h1>
         </div>
         <div className={styles.userMenu}>
+          <NotificationCenter />
           <button
             onClick={() => setIsProfileModalOpen(true)}
             title="Editar perfil"

@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 export default function ServiceWorkerRegister() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      const register = () => {
         navigator.serviceWorker
           .register('/sw.js')
           .then((registration) => {
@@ -14,7 +14,14 @@ export default function ServiceWorkerRegister() {
           .catch((err) => {
             console.error('ServiceWorker registration failed: ', err);
           });
-      });
+      };
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        register();
+      } else {
+        window.addEventListener('load', register);
+        return () => window.removeEventListener('load', register);
+      }
     }
   }, []);
 

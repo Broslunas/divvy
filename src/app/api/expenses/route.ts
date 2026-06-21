@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
+import { notifyUser } from '@/lib/push';
 import type { SplitType, ItemizedBillItem, MultiPayer } from '@/types';
 
 interface RawItem {
@@ -106,6 +107,40 @@ export async function POST(request: Request) {
       paymentMethod: paymentMethod ? String(paymentMethod) : undefined,
       items: normalisedItems && normalisedItems.length > 0 ? normalisedItems : undefined,
     });
+
+    // Notify group members asynchronously in background
+    (async () => {
+      try {
+        const creatorName = user.username;
+        if (expense.isSettlement) {
+          // It's a settlement. The receiver should be notified.
+          const receiverId = Array.isArray(splits) ? (splits as any[])[0]?.userId : undefined;
+          if (receiverId && receiverId !== user.id) {
+            await notifyUser(receiverId, {
+              title: `Pago recibido en "${group.name}"`,
+              message: `"${creatorName}" ha registrado un pago de ${expense.amount.toFixed(2)}€ para saldar su deuda.`,
+              link: `/group/${group.id}`,
+              type: 'settlement'
+            });
+          }
+        } else {
+          // Standard expense. Notify all group members except the payer.
+          const payerId = expense.paidById;
+          for (const memberId of group.members) {
+            if (memberId !== payerId) {
+              await notifyUser(memberId, {
+                title: `Nuevo gasto en "${group.name}"`,
+                message: `"${creatorName}" ha añadido "${expense.title}" por ${expense.amount.toFixed(2)}€.`,
+                link: `/group/${group.id}`,
+                type: 'expense'
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error sending background notifications for new expense:', err);
+      }
+    })();
 
     return NextResponse.json(expense, { status: 201 });
   } catch (e) {

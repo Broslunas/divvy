@@ -116,3 +116,45 @@ const ExpenseSchema = new mongoose.Schema({
 export const MongoUser = mongoose.models.User || mongoose.model('User', UserSchema);
 export const MongoGroup = mongoose.models.Group || mongoose.model('Group', GroupSchema);
 export const MongoExpense = mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema);
+
+// Notification Schema
+const NotificationSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  title: { type: String, required: true },
+  message: { type: String, required: true },
+  link: { type: String, required: true },
+  type: { type: String, enum: ['expense', 'settlement', 'reminder', 'system'], default: 'system' },
+  isRead: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+}, {
+  toJSON: {
+    transform(doc, ret: any) {
+      ret.id = ret._id.toString();
+      delete ret._id;
+      delete ret.__v;
+    }
+  }
+});
+
+// Push Subscription Schema
+const PushSubscriptionSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  endpoint: { type: String, required: true },
+  keys: {
+    p256dh: { type: String, required: true },
+    auth: { type: String, required: true }
+  },
+  createdAt: { type: Date, default: Date.now }
+}, {
+  toJSON: {
+    transform(doc, ret: any) {
+      ret.id = ret._id.toString();
+      delete ret._id;
+      delete ret.__v;
+    }
+  }
+});
+
+export const MongoNotification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
+export const MongoPushSubscription = mongoose.models.PushSubscription || mongoose.model('PushSubscription', PushSubscriptionSchema);
+
