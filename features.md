@@ -1,0 +1,22 @@
+# Features a añadir
+
+- [ ] Notificaciones push (nuevos gastos, liquidaciones, recordatorios)
+- [ ] Modo offline con sincronización en segundo plano
+- [ ] Escáner de tickets con OCR
+- [ ] Pagos integrados (Stripe / PayPal)
+- [ ] Presupuestos recurrentes mensuales
+- [ ] Categorías personalizables por grupo
+- [ ] Comentarios en gastos individuales
+- [ ] Foto del recibo adjunta a cada gasto
+- [ ] Recordatorios automáticos de pagos pendientes
+- [ ] Historial de actividad del grupo (feed de eventos)
+- [ ] Conversión multi-moneda automática
+- [ ] Exportación a PDF
+- [ ] Modo oscuro
+- [ ] Roles de usuario (admin, miembro, invitado)
+- [ ] Webhooks / integración con apps externas
+- [ ] Búsqueda por foto de gasto
+- [ ] Programación de gastos recurrentes
+- [ ] Vista calendario de gastos
+- [ ] Presupuestos por categoría
+- [ ] Balance semanal / mensual por email

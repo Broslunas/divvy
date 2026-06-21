@@ -220,7 +220,7 @@ export default function ExpenseDetailPage({ params }: PageProps) {
       expense.multiPayers && expense.multiPayers.length > 0
         ? expense.multiPayers.some(p => p.userId === uid)
         : uid === expense.paidById;
-    return expense.splits.every(s => s.isPaid || isPayerOnly(s.userId));
+    return expense.splits.every(s => s.isPaid || isPayerOnly(s.userId) || getMemberShare(s.userId) === 0);
   }, [expense]);
 
   const totalAllocated = useMemo(() => {

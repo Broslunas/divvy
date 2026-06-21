@@ -420,7 +420,7 @@ export default function GroupDetailPage({ params }: PageProps) {
         ? expense.multiPayers.some(p => p.userId === sUserId)
         : sUserId === expense.paidById;
 
-      const isSettled = expense.splits.every(s => s.isPaid || isPayerOnly(s.userId));
+      const isSettled = expense.splits.every(s => s.isPaid || isPayerOnly(s.userId) || getMemberShare(expense, s.userId) === 0);
       if (filterStatus === 'saldado' && !isSettled) return false;
       if (filterStatus === 'pendiente' && isSettled) return false;
     }
@@ -677,7 +677,7 @@ export default function GroupDetailPage({ params }: PageProps) {
                   const isPayerOnly = (sUserId: string) => expense.multiPayers && expense.multiPayers.length > 0
                     ? expense.multiPayers.some(p => p.userId === sUserId)
                     : sUserId === expense.paidById;
-                  const isExpenseFullySettled = expense.splits.every(s => s.isPaid || isPayerOnly(s.userId));
+                  const isExpenseFullySettled = expense.splits.every(s => s.isPaid || isPayerOnly(s.userId) || getMemberShare(expense, s.userId) === 0);
 
                   return (
                     <div
