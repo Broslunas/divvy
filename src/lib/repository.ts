@@ -63,7 +63,7 @@ export const repository = {
       const isConnected = await connectDB();
       if (isConnected) {
         try {
-          const user = await MongoUser.findByIdAndUpdate(id, updates, { new: true });
+          const user = await MongoUser.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
           return user ? (user.toJSON() as User) : null;
         } catch {
           return null;
@@ -139,7 +139,7 @@ export const repository = {
           const group = await MongoGroup.findByIdAndUpdate(
             groupId,
             { $addToSet: { members: userId } },
-            { new: true }
+            { returnDocument: 'after' }
           );
           return group ? (group.toJSON() as Group) : null;
         } catch {
@@ -159,7 +159,7 @@ export const repository = {
       const isConnected = await connectDB();
       if (isConnected) {
         try {
-          const group = await MongoGroup.findByIdAndUpdate(id, updates, { new: true });
+          const group = await MongoGroup.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
           return group ? (group.toJSON() as Group) : null;
         } catch {
           return null;
@@ -243,7 +243,7 @@ export const repository = {
       const isConnected = await connectDB();
       if (isConnected) {
         try {
-          const expense = await MongoExpense.findByIdAndUpdate(id, updates, { new: true });
+          const expense = await MongoExpense.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
           return expense ? (expense.toJSON() as Expense) : null;
         } catch {
           return null;
@@ -306,7 +306,7 @@ export const repository = {
       const isConnected = await connectDB();
       if (isConnected) {
         try {
-          const notif = await MongoNotification.findByIdAndUpdate(id, updates, { new: true });
+          const notif = await MongoNotification.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
           return notif ? (notif.toJSON() as Notification) : null;
         } catch {
           return null;
