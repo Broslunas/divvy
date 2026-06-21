@@ -35,6 +35,35 @@ interface RawPayload {
   items?: unknown;
 }
 
+function calculateSplitAmount(expense: any, splitUserId: string, groupMembers: string[]): number {
+  const { amount, splitType, splits } = expense;
+  
+  if (splitType === 'equal') {
+    const participants = splits && splits.length > 0 ? splits.map((s: any) => s.userId) : groupMembers;
+    const validParticipants = participants.filter((p: string) => groupMembers.includes(p));
+    return amount / (validParticipants.length || 1);
+  }
+  
+  const split = splits ? splits.find((s: any) => s.userId === splitUserId) : null;
+  if (!split) return 0;
+
+  if (splitType === 'exact' || splitType === 'itemized') {
+    return split.value;
+  }
+  
+  if (splitType === 'percentage') {
+    return (split.value / 100) * amount;
+  }
+  
+  if (splitType === 'shares') {
+    const totalShares = splits.reduce((sum: number, s: any) => sum + s.value, 0);
+    if (totalShares <= 0) return 0;
+    return (split.value / totalShares) * amount;
+  }
+
+  return 0;
+}
+
 // POST /api/expenses - Create new expense
 export async function POST(request: Request) {
   try {
@@ -329,7 +358,7 @@ export async function PUT(request: Request) {
             if (oldSplit && oldSplit.isPaid !== newSplit.isPaid) {
               const splitUserId = newSplit.userId;
               const isPaidNow = !!newSplit.isPaid;
-              const splitAmount = typeof newSplit.value === 'number' ? newSplit.value : Number(newSplit.value) || 0;
+              const splitAmount = calculateSplitAmount(expense, splitUserId, group.members);
               const isPayerActor = user.id === expense.paidById;
 
               if (isPaidNow) {
