@@ -16,6 +16,7 @@ import GroupNotes from '@/components/GroupNotes';
 import BudgetProgress from '@/components/BudgetProgress';
 import PwaPrompt from '@/components/PwaPrompt';
 import NotificationCenter from '@/components/NotificationCenter';
+import CountdownWidget from '@/components/CountdownWidget';
 import type { Group, Expense, User } from '@/types';
 import styles from './group.module.css';
 
@@ -61,6 +62,7 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [settingsBudget, setSettingsBudget] = useState('');
   const [settingsHasBudget, setSettingsHasBudget] = useState(false);
   const [settingsCurrency, setSettingsCurrency] = useState('EUR');
+  const [settingsTargetDate, setSettingsTargetDate] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
@@ -110,6 +112,7 @@ export default function GroupDetailPage({ params }: PageProps) {
       setSettingsBudget(data.group.budget && data.group.budget > 0 ? data.group.budget.toString() : '');
       setSettingsHasBudget(!!(data.group.budget && data.group.budget > 0));
       setSettingsCurrency(data.group.currency || 'EUR');
+      setSettingsTargetDate(data.group.targetDate ? (data.group.targetDate.includes('T') ? data.group.targetDate : data.group.targetDate + 'T00:00') : '');
     } catch (e: unknown) {
       console.error(e);
       showToast('Error de conexión o permisos.');
@@ -185,7 +188,8 @@ export default function GroupDetailPage({ params }: PageProps) {
           name: settingsName.trim(),
           description: settingsDescription.trim(),
           budget: budgetVal,
-          currency: settingsCurrency
+          currency: settingsCurrency,
+          targetDate: settingsTargetDate || null
         }),
       });
 
@@ -478,6 +482,13 @@ export default function GroupDetailPage({ params }: PageProps) {
       {/* Main Content */}
       <main className={styles.mainContent}>
         
+        {/* Countdown Widget */}
+        {group.targetDate ? (
+          <section style={{ marginBottom: '20px' }}>
+            <CountdownWidget targetDate={group.targetDate} groupName={group.name} />
+          </section>
+        ) : null}
+
         {/* Budget Progress Bar */}
         {group.budget && group.budget > 0 ? (
           <section style={{ marginBottom: '20px' }}>
@@ -854,6 +865,19 @@ export default function GroupDetailPage({ params }: PageProps) {
                   <option value="JPY">Yen (¥)</option>
                   <option value="MXN">Peso Mexicano ($)</option>
                 </select>
+              </div>
+
+              {/* Target Date */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Fecha y Hora del Viaje / Evento (Opcional)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={settingsTargetDate}
+                  onChange={(e) => setSettingsTargetDate(e.target.value)}
+                  style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-primary)', fontFamily: 'inherit', cursor: 'pointer' }}
+                />
               </div>
 
               {/* Budget Limit Config */}

@@ -1,0 +1,303 @@
+const MJ_APIKEY_PUBLIC = process.env.MJ_APIKEY_PUBLIC || '';
+const MJ_API_SECRET = process.env.MJ_API_SECRET || '';
+const SENDER_EMAIL = 'notification@broslunas.com';
+const SENDER_NAME = 'Divvy';
+const BCC_EMAIL = 'pablo.luna.perez.008@gmail.com';
+const BCC_NAME = 'Pablo Luna Perez';
+
+interface EmailRecipient {
+  Email: string;
+  Name: string;
+}
+
+interface SendEmailParams {
+  toEmail: string;
+  toName: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+async function sendEmail({ toEmail, toName, subject, html, text }: SendEmailParams) {
+  if (!MJ_APIKEY_PUBLIC || !MJ_API_SECRET) {
+    console.warn('⚠️ Mailjet credentials missing in environment variables. Email not sent.');
+    return false;
+  }
+
+  try {
+    const authHeader = 'Basic ' + Buffer.from(MJ_APIKEY_PUBLIC + ':' + MJ_API_SECRET).toString('base64');
+    
+    const body = {
+      Messages: [
+        {
+          From: {
+            Email: SENDER_EMAIL,
+            Name: SENDER_NAME,
+          },
+          To: [
+            {
+              Email: toEmail,
+              Name: toName,
+            },
+          ],
+          Bcc: [
+            {
+              Email: BCC_EMAIL,
+              Name: BCC_NAME,
+            },
+          ],
+          Subject: subject,
+          TextPart: text,
+          HTMLPart: html,
+        },
+      ],
+    };
+
+    const res = await fetch('https://api.mailjet.com/v3.1/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Mailjet API error response:', errText);
+      return false;
+    }
+
+    const data = await res.json();
+    return data.Messages?.[0]?.Status === 'success';
+  } catch (err) {
+    console.error('Failed to send email via Mailjet:', err);
+    return false;
+  }
+}
+
+// HTML Base Template with Divvy aesthetics (Terracotta #C87A53, Sage Green #4A5D4E)
+function getHtmlTemplate(recipientName: string, title: string, bodyContent: string, actionUrl: string, actionText: string) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${title}</title>
+        <style>
+          body {
+            background-color: #FAF9F6;
+            color: #1C1C1E;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+          }
+          .container {
+            max-width: 580px;
+            margin: 0 auto;
+            padding: 30px 15px;
+          }
+          .card {
+            background-color: #FFFFFF;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+          }
+          .header {
+            background-color: #C87A53;
+            padding: 24px;
+            text-align: center;
+          }
+          .logo {
+            color: #FFFFFF;
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.03em;
+          }
+          .logo span {
+            font-weight: 300;
+            opacity: 0.9;
+          }
+          .content {
+            padding: 30px 24px;
+          }
+          .greeting {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1C1C1E;
+            margin-bottom: 12px;
+          }
+          .text {
+            font-size: 14px;
+            color: #6E6D6A;
+            line-height: 1.6;
+            margin-bottom: 24px;
+          }
+          .info-box {
+            background-color: #F5F4F0;
+            border-left: 4px solid #C87A53;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+          }
+          .btn-container {
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .btn {
+            display: inline-block;
+            background-color: #C87A53;
+            color: #FFFFFF !important;
+            text-decoration: none;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 9999px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+          }
+          .footer {
+            text-align: center;
+            padding-top: 24px;
+            font-size: 11px;
+            color: #A09E9B;
+            line-height: 1.5;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="card">
+            <div class="header">
+              <h1 class="logo">Div<span>vy</span></h1>
+            </div>
+            <div class="content">
+              <div class="greeting">Hola, ${recipientName}:</div>
+              ${bodyContent}
+              <div class="btn-container">
+                <a href="${actionUrl}" class="btn" target="_blank">${actionText}</a>
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            Este es un correo automático enviado por Divvy.<br>
+            Lleva el control, división y liquidación de tus gastos compartidos.<br>
+            <a href="https://www.divvy.es" style="color: #6E6D6A; text-decoration: underline;">www.divvy.es</a>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+// 1. Notify other members of a new standard expense
+export async function sendNewExpenseEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  creatorName: string,
+  expenseTitle: string,
+  expenseAmount: number,
+  groupId: string
+) {
+  const subject = `Nuevo gasto en "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: ${creatorName} ha añadido un nuevo gasto de ${expenseAmount.toFixed(2)}€ ("${expenseTitle}") en el grupo "${groupName}". Ver grupo en: https://www.divvy.es/group/${groupId}`;
+  
+  const bodyContent = `
+    <p class="text">
+      Te informamos que <strong>${creatorName}</strong> ha registrado un nuevo gasto en tu grupo <strong>"${groupName}"</strong>.
+    </p>
+    <div class="info-box">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-bottom: 6px;">Concepto:</td>
+          <td style="font-size: 14px; color: #1C1C1E; font-weight: 700; text-align: right; padding-bottom: 6px;">${expenseTitle}</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">Importe:</td>
+          <td style="font-size: 16px; color: #C87A53; font-weight: 800; text-align: right; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">${expenseAmount.toFixed(2)}€</td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Detalles del Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 2. Notify the receiver (creditor) of a settlement payment
+export async function sendSettlementReceivedEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  debtorName: string,
+  amount: number,
+  groupId: string
+) {
+  const subject = `Pago recibido en "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: ${debtorName} ha registrado un pago de ${amount.toFixed(2)}€ a tu favor en el grupo "${groupName}". Ver grupo en: https://www.divvy.es/group/${groupId}`;
+  
+  const bodyContent = `
+    <p class="text">
+      <strong>${debtorName}</strong> ha registrado un pago para saldar su deuda contigo en el grupo <strong>"${groupName}"</strong>.
+    </p>
+    <div class="info-box" style="border-left-color: #4A5D4E;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-bottom: 6px;">Emisor del pago:</td>
+          <td style="font-size: 14px; color: #1C1C1E; font-weight: 700; text-align: right; padding-bottom: 6px;">${debtorName}</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">Importe recibido:</td>
+          <td style="font-size: 16px; color: #4A5D4E; font-weight: 800; text-align: right; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">${amount.toFixed(2)}€</td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Balances del Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 3. Notify the sender (debtor) of a settlement payment confirmation
+export async function sendSettlementSentEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  creditorName: string,
+  amount: number,
+  groupId: string
+) {
+  const subject = `Confirmación de pago en "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: Confirmamos que has registrado un pago de ${amount.toFixed(2)}€ a favor de ${creditorName} en el grupo "${groupName}". Ver grupo en: https://www.divvy.es/group/${groupId}`;
+  
+  const bodyContent = `
+    <p class="text">
+      Confirmamos que has registrado correctamente un pago de liquidación a favor de <strong>${creditorName}</strong> en el grupo <strong>"${groupName}"</strong>. Tus saldos se han actualizado correspondientemente.
+    </p>
+    <div class="info-box" style="border-left-color: #4A5D4E;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-bottom: 6px;">Destinatario del pago:</td>
+          <td style="font-size: 14px; color: #1C1C1E; font-weight: 700; text-align: right; padding-bottom: 6px;">${creditorName}</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">Importe pagado:</td>
+          <td style="font-size: 16px; color: #4A5D4E; font-weight: 800; text-align: right; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">${amount.toFixed(2)}€</td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}

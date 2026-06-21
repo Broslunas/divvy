@@ -8,6 +8,34 @@ import type { Group, User } from '@/types';
 import NotificationCenter from '@/components/NotificationCenter';
 import styles from './page.module.css';
 
+function getMiniCountdown(targetStr: string): string {
+  try {
+    const hasTime = targetStr.includes('T');
+    const target = new Date(hasTime ? targetStr : targetStr + 'T00:00:00');
+    const now = new Date();
+    const diffMs = target.getTime() - now.getTime();
+
+    if (diffMs <= 0) {
+      return 'En marcha 🎉';
+    }
+
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) {
+      return `Faltan ${days}d ${hours}h`;
+    }
+    if (hours > 0) {
+      const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `Faltan ${hours}h ${mins}m`;
+    }
+    const mins = Math.floor(diffMs / (1000 * 60));
+    return `Faltan ${mins}m`;
+  } catch {
+    return '';
+  }
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -342,6 +370,27 @@ export default function Dashboard() {
                         </span>
                         <span>• Cód: {group.inviteCode}</span>
                       </div>
+                      {group.targetDate && (
+                        <div
+                          style={{
+                            marginTop: '8px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            backgroundColor: 'rgba(200, 122, 83, 0.05)',
+                            border: '1px dashed rgba(200, 122, 83, 0.2)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '3px 8px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            color: 'var(--accent-primary)',
+                            width: 'fit-content'
+                          }}
+                        >
+                          <span style={{ animation: 'pulseBadge 2s infinite', fontSize: '0.8rem' }}>⏳</span>
+                          <span>{getMiniCountdown(group.targetDate)}</span>
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <button

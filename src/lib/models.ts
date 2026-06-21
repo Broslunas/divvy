@@ -32,6 +32,7 @@ const GroupSchema = new mongoose.Schema({
   }],
   currency: { type: String, default: 'EUR' },
   notes: { type: String, default: '' },
+  targetDate: { type: String },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
@@ -43,6 +44,7 @@ const GroupSchema = new mongoose.Schema({
       ret.categoryBudgets = ret.categoryBudgets || [];
       ret.currency = ret.currency || 'EUR';
       ret.notes = ret.notes || '';
+      ret.targetDate = ret.targetDate || undefined;
       delete ret._id;
       delete ret.__v;
     }

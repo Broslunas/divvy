@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
 import { notifyUser } from '@/lib/push';
+import { sendNewExpenseEmail, sendSettlementReceivedEmail, sendSettlementSentEmail } from '@/lib/mail';
 import type { SplitType, ItemizedBillItem, MultiPayer } from '@/types';
 
 interface RawItem {
@@ -108,32 +109,74 @@ export async function POST(request: Request) {
       items: normalisedItems && normalisedItems.length > 0 ? normalisedItems : undefined,
     });
 
-    // Notify group members asynchronously in background
+    // Notify group members asynchronously in background (Push, In-App and Email)
     (async () => {
       try {
         const creatorName = user.username;
         if (expense.isSettlement) {
           // It's a settlement. The receiver should be notified.
           const receiverId = Array.isArray(splits) ? (splits as any[])[0]?.userId : undefined;
-          if (receiverId && receiverId !== user.id) {
-            await notifyUser(receiverId, {
-              title: `Pago recibido en "${group.name}"`,
-              message: `"${creatorName}" ha registrado un pago de ${expense.amount.toFixed(2)}€ para saldar su deuda.`,
-              link: `/group/${group.id}`,
-              type: 'settlement'
-            });
+          
+          if (receiverId) {
+            const receiver = await repository.users.getById(receiverId);
+
+            // Send push/web and email to receiver (creditor)
+            if (receiver && receiver.id !== user.id) {
+              await notifyUser(receiverId, {
+                title: `Pago recibido en "${group.name}"`,
+                message: `"${creatorName}" ha registrado un pago de ${expense.amount.toFixed(2)}€ para saldar su deuda.`,
+                link: `/group/${group.id}`,
+                type: 'settlement'
+              });
+
+              // Send email to creditor
+              await sendSettlementReceivedEmail(
+                receiver.email,
+                receiver.username,
+                group.name,
+                creatorName,
+                expense.amount,
+                group.id
+              );
+            }
+
+            // Send email confirmation to sender (debtor)
+            await sendSettlementSentEmail(
+              user.email,
+              user.username,
+              group.name,
+              receiver ? receiver.username : 'un miembro del grupo',
+              expense.amount,
+              group.id
+            );
           }
         } else {
           // Standard expense. Notify all group members except the payer.
           const payerId = expense.paidById;
           for (const memberId of group.members) {
             if (memberId !== payerId) {
-              await notifyUser(memberId, {
-                title: `Nuevo gasto en "${group.name}"`,
-                message: `"${creatorName}" ha añadido "${expense.title}" por ${expense.amount.toFixed(2)}€.`,
-                link: `/group/${group.id}`,
-                type: 'expense'
-              });
+              const member = await repository.users.getById(memberId);
+              
+              if (member) {
+                // Send push/web notification
+                await notifyUser(memberId, {
+                  title: `Nuevo gasto en "${group.name}"`,
+                  message: `"${creatorName}" ha añadido "${expense.title}" por ${expense.amount.toFixed(2)}€.`,
+                  link: `/group/${group.id}`,
+                  type: 'expense'
+                });
+
+                // Send email
+                await sendNewExpenseEmail(
+                  member.email,
+                  member.username,
+                  group.name,
+                  creatorName,
+                  expense.title,
+                  expense.amount,
+                  group.id
+                );
+              }
             }
           }
         }

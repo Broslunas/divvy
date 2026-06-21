@@ -23,6 +23,7 @@ export interface Group {
   categoryBudgets?: CategoryBudget[];
   currency?: string; // 'EUR' | 'USD' | 'GBP' | 'JPY' | 'MXN'
   notes?: string; // Travel notes, itinerary, packing list
+  targetDate?: string; // Target date of the event/trip (e.g. YYYY-MM-DD)
   createdAt: string;
 }
 
