@@ -58,6 +58,12 @@ export async function PUT(request: Request) {
     }
 
     const { repository } = await import('@/lib/repository');
+
+    // If disabling notifications, clean up all push subscriptions for this user
+    if (notificationsEnabled === false) {
+      await repository.pushSubscriptions.deleteByUserId(user.id);
+    }
+
     const updatedUser = await repository.users.update(user.id, updates);
     if (!updatedUser) {
       return NextResponse.json(

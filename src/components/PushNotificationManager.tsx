@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell, X } from 'lucide-react';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -13,47 +13,70 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export default function PushNotificationManager() {
   const [permission, setPermission] = useState<NotificationPermission | 'unavailable'>('default');
   const [dismissed, setDismissed] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
-  const refreshState = useCallback(async () => {
+  const refreshAuth = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me');
       if (!res.ok) {
-        setNotificationsEnabled(null);
+        if (notificationsEnabled !== null) setNotificationsEnabled(null);
         return;
       }
       const user = await res.json();
-      setNotificationsEnabled(user.notificationsEnabled ?? false);
+      const enabled = user.notificationsEnabled ?? false;
+      if (enabled !== notificationsEnabled) {
+        setNotificationsEnabled(enabled);
+      }
     } catch {
-      setNotificationsEnabled(null);
+      if (notificationsEnabled !== null) setNotificationsEnabled(null);
+    }
+  }, [notificationsEnabled]);
+
+  const checkSubscription = useCallback(async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      const hasSub = !!sub;
+      if (!hasSub) {
+        setDismissed(false);
+      }
+    } catch {
+      // Not supported
     }
   }, []);
 
   useEffect(() => {
-    refreshState();
-
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       setPermission('unavailable');
       return;
     }
+
     setPermission(Notification.permission);
+
+    refreshAuth();
     checkSubscription();
 
-    const handleToggle = () => refreshState();
-    window.addEventListener('notifications-toggle', handleToggle);
-    return () => window.removeEventListener('notifications-toggle', handleToggle);
-  }, [refreshState]);
+    intervalRef.current = setInterval(refreshAuth, 30000);
 
-  async function checkSubscription() {
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      setIsSubscribed(!!sub);
-    } catch {
-      // Not supported
-    }
-  }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshAuth();
+        checkSubscription();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const onToggle = () => refreshAuth();
+    window.addEventListener('notifications-toggle', onToggle);
+
+    return () => {
+      clearInterval(intervalRef.current);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('notifications-toggle', onToggle);
+    };
+  }, [refreshAuth, checkSubscription]);
 
   async function subscribe() {
     try {
@@ -80,7 +103,6 @@ export default function PushNotificationManager() {
         })
       });
 
-      setIsSubscribed(true);
       setPermission('granted');
       setDismissed(true);
     } catch (e) {
