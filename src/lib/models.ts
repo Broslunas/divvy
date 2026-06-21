@@ -112,7 +112,26 @@ const ExpenseSchema = new mongoose.Schema({
   }
 });
 
+// Push Subscription Schema
+const PushSubscriptionSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  endpoint: { type: String, required: true, unique: true },
+  p256dh: { type: String, required: true },
+  auth: { type: String, required: true },
+  userAgent: { type: String },
+  createdAt: { type: Date, default: Date.now }
+}, {
+  toJSON: {
+    transform(doc, ret: any) {
+      ret.id = ret._id.toString();
+      delete ret._id;
+      delete ret.__v;
+    }
+  }
+});
+
 // Export models, ensuring they aren't compiled twice in Dev mode
 export const MongoUser = mongoose.models.User || mongoose.model('User', UserSchema);
 export const MongoGroup = mongoose.models.Group || mongoose.model('Group', GroupSchema);
 export const MongoExpense = mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema);
+export const MongoPushSubscription = mongoose.models.PushSubscription || mongoose.model('PushSubscription', PushSubscriptionSchema);

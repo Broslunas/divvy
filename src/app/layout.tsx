@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 };
 
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import PushNotificationManager from "@/components/PushNotificationManager";
 
 export default function RootLayout({
   children,
@@ -39,6 +40,7 @@ export default function RootLayout({
       </head>
       <body>
         <ServiceWorkerRegister />
+        <PushNotificationManager />
         {children}
       </body>
     </html>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
+import { notifyGroupMembers } from '@/lib/notifications';
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +26,14 @@ export async function POST(request: Request) {
     if (!updatedGroup) {
       return NextResponse.json({ error: 'No se pudo unir al grupo.' }, { status: 500 });
     }
+
+    // Notify existing members that a new user joined
+    await notifyGroupMembers(group.id, user.id, {
+      title: `👋 ${user.username} se ha unido al grupo`,
+      body: `${user.username} se ha unido a "${group.name}"`,
+      tag: `join-${group.id}-${user.id}`,
+      url: `/group/${group.id}`
+    });
 
     return NextResponse.json(updatedGroup);
   } catch (e) {

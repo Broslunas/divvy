@@ -47,6 +47,16 @@ export interface ItemizedBillItem {
   splitValues?: Record<string, string>; // Per-user values: amount for 'exact', % for 'percentage', parts for 'shares'.
 }
 
+export interface PushSubscription {
+  id: string;
+  userId: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
 export interface Expense {
   id: string;
   groupId: string;
