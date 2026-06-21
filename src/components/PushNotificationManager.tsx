@@ -14,7 +14,7 @@ export default function PushNotificationManager() {
   const [permission, setPermission] = useState<NotificationPermission | 'unavailable'>('default');
   const [dismissed, setDismissed] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const refreshAuth = useCallback(async () => {
     try {
