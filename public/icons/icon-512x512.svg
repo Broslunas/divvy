@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="grad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#E59872" />
+      <stop offset="100%" stop-color="#C87A53" />
+    </radialGradient>
+  </defs>
+  <!-- Background circle -->
+  <rect width="512" height="512" rx="112" fill="url(#grad)" />
+  
+  <!-- Intersecting clean geometric shapes representing dividing/sharing -->
+  <circle cx="213" cy="256" r="85" fill="#FAF9F6" opacity="0.9" />
+  <circle cx="299" cy="256" r="85" fill="#4A5D4E" opacity="0.85" />
+  
+  <!-- Intersecting region highlight -->
+  <path d="M 256,174.7 A 85,85 0 0,0 213,256 a 85,85 0 0,0 43,81.3 A 85,85 0 0,0 299,256 a 85,85 0 0,0 -43,-81.3 z" fill="#FAF9F6" />
+</svg>

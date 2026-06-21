@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Colors */
+  --bg-primary: #FAF9F6;
+  --bg-secondary: #F5F4F0;
+  --bg-card: #FFFFFF;
+  --text-primary: #1C1C1E;
+  --text-secondary: #6E6D6A;
+  --text-muted: #A09E9B;
+  
+  --accent-primary: #C87A53; /* Terracotta */
+  --accent-primary-hover: #B26B46;
+  --accent-secondary: #4A5D4E; /* Olive/Sage */
+  --accent-secondary-hover: #3E4E41;
+  
+  --success: #2D6A4F; /* Forest green for "they owe you" */
+  --success-light: #EBF7EE;
+  --danger: #B05A5A; /* Soft crimson for "you owe" */
+  --danger-light: #FBEAEA;
+  
+  --border-light: rgba(0, 0, 0, 0.07);
+  --border-focus: rgba(200, 122, 83, 0.3);
+  
+  /* Fonts */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Layout and shapes */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-subtle: 0 4px 20px -2px rgba(28, 28, 30, 0.03), 0 2px 8px -1px rgba(28, 28, 30, 0.02);
+  --shadow-tactile: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Base Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: var(--radius-full);
+}
+
+/* Common UI Elements */
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 100px 16px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-subtle);
+  transition: var(--transition-smooth);
+}
+
+.card:hover {
+  border-color: rgba(200, 122, 83, 0.15);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-tactile);
+  gap: 8px;
+}
+
+.btn-primary {
+  background-color: var(--accent-primary);
+  color: #FFFFFF;
+}
+.btn-primary:hover {
+  background-color: var(--accent-primary-hover);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.btn-secondary:hover {
+  background-color: #ECEAE5;
+  transform: translateY(-1px);
+}
+
+.btn-text {
+  background: transparent;
+  color: var(--accent-primary);
+  box-shadow: none;
+  padding: 8px 16px;
+  font-weight: 500;
+}
+.btn-text:hover {
+  color: var(--accent-primary-hover);
+  background-color: rgba(200, 122, 83, 0.05);
+}
+
+/* Custom visual layout classes */
+.page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-top: -16px;
+  margin-bottom: 24px;
+}
+
+/* Page transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

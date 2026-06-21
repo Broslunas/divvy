@@ -1,0 +1,24 @@
+{
+  "name": "Divvy Gastos Compartidos",
+  "short_name": "Divvy",
+  "description": "Lleva el control, división y liquidación de tus gastos grupales.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#C87A53",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

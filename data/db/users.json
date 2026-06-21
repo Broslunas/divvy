@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1b5530f5-2ebb-44de-9d32-f626ee15b0bd",
+    "username": "Pablo L",
+    "email": "pablo.luna.perez.008@gmail.com",
+    "passwordHash": "$2b$10$motdHmciWxFiB6/MvS1W/eC2Xf31qz0ta1WpmV2ATJ8txFrSrPhIC",
+    "avatarColor": "#D2691E",
+    "createdAt": "2026-06-21T10:45:23.192Z"
+  },
+  {
+    "id": "894741c6-1fe7-4426-86b3-0b7d43a4a14b",
+    "username": "paco",
+    "email": "paco@gmail.com",
+    "passwordHash": "$2b$10$W1IICIWfETsGC5kZ6k86DOyM/41/wwrc/tc5Eu.m6LPFY2EPPUF..",
+    "avatarColor": "#6B8E23",
+    "createdAt": "2026-06-21T10:46:47.502Z"
+  }
+]

@@ -1,0 +1,321 @@
+.groupDetail {
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+}
+
+.header {
+  padding: 16px 20px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-smooth);
+}
+
+.backBtn:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.groupName {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.memberSummary {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.mainContent {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px 16px 120px 16px;
+}
+
+/* Tabs */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-light);
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  padding: 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.tabBtn.active {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-tactile);
+}
+
+/* Info card / Invite section */
+.inviteCard {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-subtle);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inviteHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inviteTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.codeBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  letter-spacing: 0.1em;
+}
+
+.copyBtn {
+  background: transparent;
+  border: none;
+  color: var(--accent-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.copyBtn:hover {
+  background-color: var(--border-focus);
+}
+
+.membersList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.memberPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.memberDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Expenses List */
+.expenseList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.expenseCard {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.expenseCard:hover {
+  border-color: var(--accent-primary);
+}
+
+.expenseLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.categoryIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid var(--border-light);
+}
+
+.expenseInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expenseTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.expenseMeta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.expenseRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.expenseAmount {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.deleteBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.deleteBtn:hover {
+  color: var(--danger);
+  background-color: var(--danger-light);
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(200, 122, 83, 0.4);
+  z-index: 50;
+  transition: var(--transition-smooth);
+}
+
+.fab:hover {
+  background-color: var(--accent-primary-hover);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.fab:active {
+  transform: translateY(0) scale(1);
+}
+
+/* Settlement label for expenses list */
+.settlementBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background-color: var(--success-light);
+  color: var(--success);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* Expandable split detail panel */
+.splitDetail {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border-light);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.splitDetailRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}

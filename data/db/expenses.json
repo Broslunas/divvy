@@ -1,0 +1,38 @@
+[
+  {
+    "id": "e6abf0fa-b316-429b-8b12-5f9b04bdc1e1",
+    "groupId": "2412e251-b508-423e-bf88-fd4ec799d4c5",
+    "title": "Liquidación: Pablo L → paco",
+    "amount": 10,
+    "date": "2026-06-21T10:47:54.911Z",
+    "category": "Otros",
+    "paidById": "1b5530f5-2ebb-44de-9d32-f626ee15b0bd",
+    "splitType": "exact",
+    "splits": [
+      {
+        "userId": "894741c6-1fe7-4426-86b3-0b7d43a4a14b",
+        "value": 10
+      }
+    ],
+    "isSettlement": true,
+    "createdAt": "2026-06-21T10:47:55.054Z"
+  },
+  {
+    "id": "7136cfbb-a011-49c4-ba5a-ea821c4c5d77",
+    "groupId": "2412e251-b508-423e-bf88-fd4ec799d4c5",
+    "title": "Liquidación: Pablo L → paco",
+    "amount": 10,
+    "date": "2026-06-21T10:49:51.297Z",
+    "category": "Otros",
+    "paidById": "1b5530f5-2ebb-44de-9d32-f626ee15b0bd",
+    "splitType": "exact",
+    "splits": [
+      {
+        "userId": "894741c6-1fe7-4426-86b3-0b7d43a4a14b",
+        "value": 10
+      }
+    ],
+    "isSettlement": true,
+    "createdAt": "2026-06-21T10:49:51.484Z"
+  }
+]

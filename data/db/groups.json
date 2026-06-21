@@ -1,0 +1,23 @@
+[
+  {
+    "id": "40985981-3e49-4bdf-9335-224d6b5b2b02",
+    "name": "La Gomera 2026",
+    "description": "Viaje a La Gomera (Pablo, Miguel, Christopher & Gustavo)",
+    "members": [
+      "1b5530f5-2ebb-44de-9d32-f626ee15b0bd"
+    ],
+    "inviteCode": "0AB2BEDD",
+    "createdAt": "2026-06-21T10:45:53.696Z"
+  },
+  {
+    "id": "2412e251-b508-423e-bf88-fd4ec799d4c5",
+    "name": "TEST",
+    "description": "TEST",
+    "members": [
+      "1b5530f5-2ebb-44de-9d32-f626ee15b0bd",
+      "894741c6-1fe7-4426-86b3-0b7d43a4a14b"
+    ],
+    "inviteCode": "D9ECF882",
+    "createdAt": "2026-06-21T10:46:28.901Z"
+  }
+]
