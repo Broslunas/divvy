@@ -744,7 +744,6 @@ export default function GroupDetailPage({ params }: PageProps) {
                               <Trash2 size={15} />
                             </button>
                           )}
-                        </div>
                       </div>
                     </div>
                   );
