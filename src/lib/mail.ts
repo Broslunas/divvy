@@ -439,3 +439,60 @@ export async function sendGroupUpdatedEmail(
   return sendEmail({ toEmail, toName, subject, html, text });
 }
 
+// 8. Notify when a split is marked as paid
+export async function sendSplitPaidNotificationEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  actorName: string,
+  expenseTitle: string,
+  splitAmount: number,
+  groupId: string,
+  isPayerActor: boolean
+) {
+  const subject = isPayerActor
+    ? `Pago confirmado para "${expenseTitle}" en "${groupName}" — Divvy`
+    : `Cuota marcada como pagada para "${expenseTitle}" en "${groupName}" — Divvy`;
+
+  const text = isPayerActor
+    ? `Hola ${toName}: ${actorName} ha confirmado que has pagado tu cuota de ${splitAmount.toFixed(2)}€ para el gasto "${expenseTitle}" en el grupo "${groupName}".`
+    : `Hola ${toName}: ${actorName} ha marcado como pagada su cuota de ${splitAmount.toFixed(2)}€ para el gasto "${expenseTitle}" en el grupo "${groupName}".`;
+
+  const bodyContent = isPayerActor
+    ? `<p class="text"><strong>${actorName}</strong> ha confirmado el pago de tu cuota de <strong>${splitAmount.toFixed(2)}€</strong> para el gasto "${expenseTitle}" en el grupo "${groupName}".</p>`
+    : `<p class="text"><strong>${actorName}</strong> ha marcado como pagada su cuota de <strong>${splitAmount.toFixed(2)}€</strong> para el gasto "${expenseTitle}" en el grupo "${groupName}".</p>`;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Detalles');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 9. Notify when a split is marked as pending (unpaid)
+export async function sendSplitPendingNotificationEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  actorName: string,
+  expenseTitle: string,
+  splitAmount: number,
+  groupId: string,
+  isPayerActor: boolean
+) {
+  const subject = `Cuota marcada como pendiente en "${groupName}" — Divvy`;
+
+  const text = isPayerActor
+    ? `Hola ${toName}: ${actorName} ha marcado como pendiente tu cuota de ${splitAmount.toFixed(2)}€ para el gasto "${expenseTitle}" en el grupo "${groupName}".`
+    : `Hola ${toName}: ${actorName} ha marcado como pendiente su cuota de ${splitAmount.toFixed(2)}€ para el gasto "${expenseTitle}" en el grupo "${groupName}".`;
+
+  const bodyContent = isPayerActor
+    ? `<p class="text"><strong>${actorName}</strong> ha marcado como pendiente tu cuota de <strong>${splitAmount.toFixed(2)}€</strong> para el gasto "${expenseTitle}" en el grupo "${groupName}".</p>`
+    : `<p class="text"><strong>${actorName}</strong> ha marcado como pendiente su cuota de <strong>${splitAmount.toFixed(2)}€</strong> para el gasto "${expenseTitle}" en el grupo "${groupName}".</p>`;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Detalles');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+

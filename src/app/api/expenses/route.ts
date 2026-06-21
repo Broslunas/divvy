@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
 import { notifyUser } from '@/lib/push';
-import { sendNewExpenseEmail, sendSettlementReceivedEmail, sendSettlementSentEmail, sendExpenseUpdatedEmail, sendExpenseDeletedEmail } from '@/lib/mail';
+import { sendNewExpenseEmail, sendSettlementReceivedEmail, sendSettlementSentEmail, sendExpenseUpdatedEmail, sendExpenseDeletedEmail, sendSplitPaidNotificationEmail, sendSplitPendingNotificationEmail } from '@/lib/mail';
 import type { SplitType, ItemizedBillItem, MultiPayer } from '@/types';
 
 interface RawItem {
@@ -296,27 +296,131 @@ export async function PUT(request: Request) {
     (async () => {
       try {
         const editorName = user.username;
-        for (const memberId of group.members) {
-          if (memberId !== user.id) {
-            const member = await repository.users.getById(memberId);
-            if (member) {
-              await notifyUser(memberId, {
-                title: `Gasto modificado en "${group.name}"`,
-                message: `"${editorName}" ha modificado el gasto "${expense.title}".`,
-                link: `/group/${group.id}`,
-                type: 'expense'
-              });
+        const isGeneralUpdate = updates.title !== undefined || updates.amount !== undefined || updates.category !== undefined || updates.date !== undefined;
 
-              await sendExpenseUpdatedEmail(
-                member.email,
-                member.username,
-                group.name,
-                editorName,
-                expense.title,
-                updatedExpense.title,
-                updatedExpense.amount,
-                group.id
-              );
+        if (isGeneralUpdate) {
+          for (const memberId of group.members) {
+            if (memberId !== user.id) {
+              const member = await repository.users.getById(memberId);
+              if (member) {
+                await notifyUser(memberId, {
+                  title: `Gasto modificado en "${group.name}"`,
+                  message: `"${editorName}" ha modificado el gasto "${expense.title}".`,
+                  link: `/group/${group.id}`,
+                  type: 'expense'
+                });
+
+                await sendExpenseUpdatedEmail(
+                  member.email,
+                  member.username,
+                  group.name,
+                  editorName,
+                  expense.title,
+                  updatedExpense.title,
+                  updatedExpense.amount,
+                  group.id
+                );
+              }
+            }
+          }
+        } else if (updates.splits && Array.isArray(updates.splits) && expense.splits && Array.isArray(expense.splits)) {
+          for (const newSplit of updates.splits) {
+            const oldSplit = expense.splits.find((s: any) => s.userId === newSplit.userId);
+            if (oldSplit && oldSplit.isPaid !== newSplit.isPaid) {
+              const splitUserId = newSplit.userId;
+              const isPaidNow = !!newSplit.isPaid;
+              const splitAmount = typeof newSplit.value === 'number' ? newSplit.value : Number(newSplit.value) || 0;
+              const isPayerActor = user.id === expense.paidById;
+
+              if (isPaidNow) {
+                if (isPayerActor) {
+                  const debtor = await repository.users.getById(splitUserId);
+                  if (debtor && debtor.id !== user.id) {
+                    await notifyUser(splitUserId, {
+                      title: `Pago confirmado para "${expense.title}"`,
+                      message: `"${editorName}" ha confirmado que has pagado tu cuota de ${splitAmount.toFixed(2)}€.`,
+                      link: `/group/${group.id}`,
+                      type: 'settlement'
+                    });
+
+                    await sendSplitPaidNotificationEmail(
+                      debtor.email,
+                      debtor.username,
+                      group.name,
+                      editorName,
+                      expense.title,
+                      splitAmount,
+                      group.id,
+                      true
+                    );
+                  }
+                } else {
+                  const payer = await repository.users.getById(expense.paidById);
+                  if (payer && payer.id !== user.id) {
+                    await notifyUser(expense.paidById, {
+                      title: `Cuota marcada como pagada para "${expense.title}"`,
+                      message: `"${editorName}" ha marcado como pagada su cuota de ${splitAmount.toFixed(2)}€.`,
+                      link: `/group/${group.id}`,
+                      type: 'settlement'
+                    });
+
+                    await sendSplitPaidNotificationEmail(
+                      payer.email,
+                      payer.username,
+                      group.name,
+                      editorName,
+                      expense.title,
+                      splitAmount,
+                      group.id,
+                      false
+                    );
+                  }
+                }
+              } else {
+                if (isPayerActor) {
+                  const debtor = await repository.users.getById(splitUserId);
+                  if (debtor && debtor.id !== user.id) {
+                    await notifyUser(splitUserId, {
+                      title: `Cuota marcada como pendiente para "${expense.title}"`,
+                      message: `"${editorName}" ha marcado como pendiente tu cuota de ${splitAmount.toFixed(2)}€.`,
+                      link: `/group/${group.id}`,
+                      type: 'expense'
+                    });
+
+                    await sendSplitPendingNotificationEmail(
+                      debtor.email,
+                      debtor.username,
+                      group.name,
+                      editorName,
+                      expense.title,
+                      splitAmount,
+                      group.id,
+                      true
+                    );
+                  }
+                } else {
+                  const payer = await repository.users.getById(expense.paidById);
+                  if (payer && payer.id !== user.id) {
+                    await notifyUser(expense.paidById, {
+                      title: `Cuota marcada como pendiente para "${expense.title}"`,
+                      message: `"${editorName}" ha marcado como pendiente su cuota de ${splitAmount.toFixed(2)}€.`,
+                      link: `/group/${group.id}`,
+                      type: 'expense'
+                    });
+
+                    await sendSplitPendingNotificationEmail(
+                      payer.email,
+                      payer.username,
+                      group.name,
+                      editorName,
+                      expense.title,
+                      splitAmount,
+                      group.id,
+                      false
+                    );
+                  }
+                }
+              }
             }
           }
         }
