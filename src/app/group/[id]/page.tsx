@@ -2,12 +2,14 @@
 
 import { useState, useEffect, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle, 
-  Search, SlidersHorizontal, FileSpreadsheet, CheckSquare, Square, 
-  Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings
+import Link from 'next/link';
+import {
+  ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle,
+  Search, SlidersHorizontal, FileSpreadsheet,
+  Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
+  ChevronRight,
 } from 'lucide-react';
-import AddExpenseModal from '@/components/AddExpenseModal';
+import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import DebtSettlement from '@/components/DebtSettlement';
 import ExpenseCharts from '@/components/ExpenseCharts';
 import GroupNotes from '@/components/GroupNotes';
@@ -60,13 +62,6 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [settingsCurrency, setSettingsCurrency] = useState('EUR');
   const [savingSettings, setSavingSettings] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  
-  // Expandable expense detail card tracking
-  const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null);
-
-  const toggleExpandExpense = (expenseId: string) => {
-    setExpandedExpenseId(expandedExpenseId === expenseId ? null : expenseId);
-  };
   
   // Filter and Search States
   const [showFilters, setShowFilters] = useState(false);
@@ -383,7 +378,7 @@ export default function GroupDetailPage({ params }: PageProps) {
     const userSplit = splits.find(s => s.userId === memberId);
     if (!userSplit) return 0;
     
-    if (splitType === 'exact') {
+    if (splitType === 'exact' || splitType === 'itemized') {
       return userSplit.value;
     }
     if (splitType === 'percentage') {
@@ -668,8 +663,7 @@ export default function GroupDetailPage({ params }: PageProps) {
             {/* Expenses Feed */}
             <section className={styles.expenseList}>
               {sortedExpenses.length > 0 ? (
-                sortedExpenses.map((expense) => {
-                  const isExpanded = expandedExpenseId === expense.id;
+                  sortedExpenses.map((expense) => {
                   const payerName = getPayerName(expense.paidById);
                   const isPayerCurrentUser = expense.paidById === currentUser?.id;
                   
@@ -689,51 +683,59 @@ export default function GroupDetailPage({ params }: PageProps) {
                     <div
                       key={expense.id}
                       className={styles.expenseCard}
-                      onClick={() => toggleExpandExpense(expense.id)}
                       style={{ flexDirection: 'column', gap: '0', alignItems: 'stretch' }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <div className={styles.expenseLeft}>
-                          <div className={styles.categoryIcon}>{categoryIcon}</div>
-                          <div className={styles.expenseInfo}>
-                            <span className={styles.expenseTitle}>{expense.title}</span>
-                            <span className={styles.expenseMeta}>
-                              {expense.multiPayers && expense.multiPayers.length > 0 ? (
-                                <strong>Varios pagadores</strong>
-                              ) : (
-                                <>Pagado por <strong>{isPayerCurrentUser ? 'ti' : payerName}</strong></>
-                              )}{' '}
-                              • {expenseDate}
-                            </span>
-                            
-                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px', flexWrap: 'wrap' }}>
-                              {expense.isSettlement ? (
-                                <span className={styles.settlementBadge}>Liquidación</span>
-                              ) : isExpenseFullySettled ? (
-                                <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}>Saldado</span>
-                              ) : (
-                                <span className={styles.settlementBadge} style={{ backgroundColor: '#FDF5E6', color: '#D48C45' }}>Pendiente</span>
-                              )}
+                      <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                        <Link
+                          href={`/group/${groupId}/${expense.id}`}
+                          className={styles.expenseCardLink}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, textDecoration: 'none', color: 'inherit', minWidth: 0, gap: 8 }}
+                        >
+                          <div className={styles.expenseLeft}>
+                            <div className={styles.categoryIcon}>{categoryIcon}</div>
+                            <div className={styles.expenseInfo}>
+                              <span className={styles.expenseTitle}>{expense.title}</span>
+                              <span className={styles.expenseMeta}>
+                                {expense.multiPayers && expense.multiPayers.length > 0 ? (
+                                  <strong>Varios pagadores</strong>
+                                ) : (
+                                  <>Pagado por <strong>{isPayerCurrentUser ? 'ti' : payerName}</strong></>
+                                )}{' '}
+                                • {expenseDate}
+                              </span>
 
-                              {expense.paymentMethod && expense.paymentMethod !== 'cash' && (
-                                <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
-                                  {expense.paymentMethod.toUpperCase()}
-                                </span>
-                              )}
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px', flexWrap: 'wrap' }}>
+                                {expense.isSettlement ? (
+                                  <span className={styles.settlementBadge}>Liquidación</span>
+                                ) : isExpenseFullySettled ? (
+                                  <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}>Saldado</span>
+                                ) : (
+                                  <span className={styles.settlementBadge} style={{ backgroundColor: '#FDF5E6', color: '#D48C45' }}>Pendiente</span>
+                                )}
 
-                              {expense.tags && expense.tags.map(t => (
-                                <span key={t} style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-secondary)' }}>#{t}</span>
-                              ))}
+                                {expense.paymentMethod && expense.paymentMethod !== 'cash' && (
+                                  <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                                    {expense.paymentMethod.toUpperCase()}
+                                  </span>
+                                )}
+
+                                {expense.tags && expense.tags.map(t => (
+                                  <span key={t} style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-secondary)' }}>#{t}</span>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className={styles.expenseRight}>
-                          <span className={styles.expenseAmount}>
-                            {expense.amount.toFixed(2)}
-                            {getCurrencySymbol(group.currency)}
-                          </span>
-                          {(isPayerCurrentUser || expense.paidById === currentUser?.id) && (
+                          <div className={styles.expenseRight}>
+                            <span className={styles.expenseAmount}>
+                              {expense.amount.toFixed(2)}
+                              {getCurrencySymbol(group.currency)}
+                            </span>
+                            <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                          </div>
+                        </Link>
+
+                        {(isPayerCurrentUser || expense.paidById === currentUser?.id) && (
                             <button
                               className={styles.deleteBtn}
                               onClick={(e) => handleDeleteExpense(e, expense.id)}
@@ -744,76 +746,6 @@ export default function GroupDetailPage({ params }: PageProps) {
                           )}
                         </div>
                       </div>
-
-                      {/* Expandable splits drawer with payment toggle switches */}
-                      {isExpanded && (
-                        <div className={styles.splitDetail}>
-                          {expense.notes && (
-                            <div style={{ fontSize: '0.75rem', backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', borderLeft: '2px solid var(--accent-primary)', marginBottom: '4px' }}>
-                              <strong>Nota:</strong> {expense.notes}
-                            </div>
-                          )}
-
-                          {expense.items && expense.items.length > 0 && (
-                            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '4px' }}>
-                              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Desglose de artículos:</span>
-                              {expense.items.map((item, index) => (
-                                <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                                  <span>{item.name}</span>
-                                  <span style={{ fontWeight: 700 }}>
-                                    {item.amount.toFixed(2)}
-                                    {getCurrencySymbol(group.currency)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Splits Payment Status checkboxes */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px' }}>
-                            <span>Reparto y Cuotas:</span>
-                            <span>Marcar Pago</span>
-                          </div>
-                          
-                          {members.map(m => {
-                            const share = getMemberShare(expense, m.id);
-                            if (share === 0) return null;
-                            
-                            const splitInfo = expense.splits.find(s => s.userId === m.id);
-                            const isPaid = splitInfo ? splitInfo.isPaid : false;
-                            
-                            const isPayer = expense.multiPayers && expense.multiPayers.length > 0
-                              ? expense.multiPayers.some(p => p.userId === m.id)
-                              : m.id === expense.paidById;
-
-                            return (
-                              <div key={m.id} className={styles.splitDetailRow} style={{ alignItems: 'center' }}>
-                                <span>{m.username} {m.id === currentUser?.id && '(Tú)'}</span>
-                                
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontWeight: 700, color: isPaid ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                                    {share.toFixed(2)}
-                                    {getCurrencySymbol(group.currency)}
-                                  </span>
-                                  
-                                  {isPayer ? (
-                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-primary)', width: '48px', textAlign: 'center' }}>PAGÓ</span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleToggleSplitPaid(e, expense, m.id, isPaid)}
-                                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', padding: '2px', color: isPaid ? 'var(--success)' : 'var(--text-muted)' }}
-                                      title={isPaid ? "Marcar como pendiente" : "Marcar como pagado directamente"}
-                                    >
-                                      {isPaid ? <CheckSquare size={16} /> : <Square size={16} />}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
                   );
                 })
@@ -1020,11 +952,12 @@ export default function GroupDetailPage({ params }: PageProps) {
 
       {/* Modal Add Expense */}
       {currentUser && (
-        <AddExpenseModal
+        <AddExpenseWizard
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           members={members}
           currentUserId={currentUser.id}
+          currency={group?.currency}
           onAddExpense={handleAddExpense}
         />
       )}

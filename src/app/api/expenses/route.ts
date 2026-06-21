@@ -1,6 +1,37 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
+import type { SplitType, ItemizedBillItem, MultiPayer } from '@/types';
+
+interface RawItem {
+  name?: unknown;
+  amount?: unknown;
+  userIds?: unknown;
+  splitType?: unknown;
+  splitValues?: unknown;
+}
+
+interface RawMultiPayer {
+  userId?: unknown;
+  amount?: unknown;
+}
+
+interface RawPayload {
+  groupId?: unknown;
+  title?: unknown;
+  amount?: unknown;
+  date?: unknown;
+  category?: unknown;
+  paidById?: unknown;
+  multiPayers?: unknown;
+  splitType?: unknown;
+  splits?: unknown;
+  isSettlement?: unknown;
+  notes?: unknown;
+  tags?: unknown;
+  paymentMethod?: unknown;
+  items?: unknown;
+}
 
 // POST /api/expenses - Create new expense
 export async function POST(request: Request) {
@@ -10,24 +41,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
 
+    const body = (await request.json()) as RawPayload;
     const {
-      groupId,
-      title,
-      amount,
-      date,
-      category,
-      paidById,
-      splitType,
-      splits,
-      isSettlement
-    } = await request.json();
+      groupId, title, amount, date, category, paidById,
+      multiPayers, splitType, splits, isSettlement,
+      notes, tags, paymentMethod, items,
+    } = body;
 
     if (!groupId || !title || amount === undefined || !date || !category || !paidById || !splitType || !splits) {
       return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 });
     }
 
     // Verify group access
-    const group = await repository.groups.getById(groupId);
+    const group = await repository.groups.getById(String(groupId));
     if (!group) {
       return NextResponse.json({ error: 'Grupo no encontrado.' }, { status: 404 });
     }
@@ -36,17 +62,49 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No tienes acceso a este grupo.' }, { status: 403 });
     }
 
+    // Normalise optional fields so the persisted document always has well-defined values.
+    const normalisedItems: ItemizedBillItem[] | undefined = Array.isArray(items)
+      ? (items as RawItem[])
+          .filter((it): it is RawItem => !!it && typeof it === 'object')
+          .map((it) => ({
+            name: String(it.name || ''),
+            amount: Number(it.amount) || 0,
+            userIds: Array.isArray(it.userIds) ? it.userIds.map(String) : [],
+            splitType: (typeof it.splitType === 'string' ? it.splitType : 'equal') as SplitType,
+            splitValues: it.splitValues && typeof it.splitValues === 'object'
+              ? Object.fromEntries(Object.entries(it.splitValues as Record<string, unknown>).map(([k, v]) => [k, String(v)]))
+              : undefined,
+          }))
+          .filter((it) => it.name.length > 0 && it.amount > 0)
+      : undefined;
+
+    const normalisedMultiPayers: MultiPayer[] | undefined = Array.isArray(multiPayers)
+      ? (multiPayers as RawMultiPayer[])
+          .filter((p): p is RawMultiPayer => !!p && typeof p === 'object')
+          .map((p) => ({ userId: String(p.userId), amount: Number(p.amount) || 0 }))
+          .filter((p) => p.amount > 0)
+      : undefined;
+
+    const normalisedTags: string[] | undefined = Array.isArray(tags)
+      ? (tags as unknown[]).map((t) => String(t).trim()).filter(Boolean)
+      : undefined;
+
     // Create expense
     const expense = await repository.expenses.create({
-      groupId,
-      title,
-      amount: parseFloat(amount),
-      date: new Date(date).toISOString(),
-      category,
-      paidById,
-      splitType,
-      splits,
-      isSettlement: !!isSettlement
+      groupId: String(groupId),
+      title: String(title),
+      amount: parseFloat(String(amount)),
+      date: new Date(String(date)).toISOString(),
+      category: String(category),
+      paidById: String(paidById),
+      multiPayers: normalisedMultiPayers && normalisedMultiPayers.length > 0 ? normalisedMultiPayers : undefined,
+      splitType: splitType as SplitType,
+      splits: splits as Parameters<typeof repository.expenses.create>[0]['splits'],
+      isSettlement: !!isSettlement,
+      notes: notes ? String(notes) : undefined,
+      tags: normalisedTags && normalisedTags.length > 0 ? normalisedTags : undefined,
+      paymentMethod: paymentMethod ? String(paymentMethod) : undefined,
+      items: normalisedItems && normalisedItems.length > 0 ? normalisedItems : undefined,
     });
 
     return NextResponse.json(expense, { status: 201 });

@@ -26,7 +26,7 @@ export interface Group {
   createdAt: string;
 }
 
-export type SplitType = 'equal' | 'exact' | 'percentage' | 'shares';
+export type SplitType = 'equal' | 'exact' | 'percentage' | 'shares' | 'itemized';
 
 export interface ExpenseSplit {
   userId: string;
@@ -42,7 +42,9 @@ export interface MultiPayer {
 export interface ItemizedBillItem {
   name: string;
   amount: number;
-  userIds: string[]; // Who shared this specific item
+  userIds: string[]; // Who shared this specific item (used for 'equal')
+  splitType?: SplitType; // How this item is split among its participants. Defaults to 'equal'.
+  splitValues?: Record<string, string>; // Per-user values: amount for 'exact', % for 'percentage', parts for 'shares'.
 }
 
 export interface Expense {

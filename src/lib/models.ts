@@ -64,7 +64,9 @@ const MultiPayerSchema = new mongoose.Schema({
 const ItemizedBillItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   amount: { type: Number, required: true },
-  userIds: [{ type: String }]
+  userIds: [{ type: String }],
+  splitType: { type: String, default: 'equal' },
+  splitValues: { type: Object, default: undefined }
 }, { _id: false });
 
 const ExpenseSchema = new mongoose.Schema({
@@ -92,7 +94,17 @@ const ExpenseSchema = new mongoose.Schema({
       ret.notes = ret.notes || '';
       ret.tags = ret.tags || [];
       ret.paymentMethod = ret.paymentMethod || 'cash';
-      ret.items = ret.items || [];
+      ret.items = (ret.items || []).map((it: any) => ({
+        name: it.name,
+        amount: it.amount,
+        userIds: it.userIds || [],
+        splitType: it.splitType || 'equal',
+        splitValues: it.splitValues
+          ? Object.fromEntries(
+              Object.entries(it.splitValues).map(([k, v]) => [k, String(v)]),
+            )
+          : undefined,
+      }));
       ret.multiPayers = ret.multiPayers || [];
       delete ret._id;
       delete ret.__v;

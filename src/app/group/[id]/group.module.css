@@ -185,12 +185,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  cursor: pointer;
   transition: var(--transition-smooth);
 }
 
 .expenseCard:hover {
   border-color: var(--accent-primary);
+}
+
+.expenseCardLink {
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s ease;
+}
+
+.expenseCardLink:hover {
+  background-color: rgba(200, 122, 83, 0.04);
+}
+
+.expenseCardLink:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
 .expenseLeft {
@@ -302,20 +315,4 @@
   text-transform: uppercase;
 }
 
-/* Expandable split detail panel */
-.splitDetail {
-  margin-top: 10px;
-  border-top: 1px dashed var(--border-light);
-  padding-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
 
-.splitDetailRow {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}

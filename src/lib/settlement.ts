@@ -52,7 +52,7 @@ export function calculateBalances(
         shares[userId] = share;
       });
     } 
-    else if (splitType === 'exact') {
+    else if (splitType === 'exact' || splitType === 'itemized') {
       splits.forEach(split => {
         if (members.includes(split.userId)) {
           shares[split.userId] = split.value;
