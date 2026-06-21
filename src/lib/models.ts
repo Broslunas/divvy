@@ -7,11 +7,13 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   avatarColor: { type: String, required: true },
+  notificationsEnabled: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
     transform(doc, ret: any) {
       ret.id = ret._id.toString();
+      ret.notificationsEnabled = ret.notificationsEnabled || false;
       delete ret._id;
       delete ret.__v;
     }

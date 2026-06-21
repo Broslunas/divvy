@@ -4,6 +4,7 @@ export interface User {
   email: string;
   passwordHash: string;
   avatarColor: string;
+  notificationsEnabled?: boolean;
   createdAt: string;
 }
 

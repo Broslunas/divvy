@@ -33,12 +33,13 @@ export async function PUT(request: Request) {
       );
     }
 
-    const { username, email, avatarColor, password } = await request.json();
+    const { username, email, avatarColor, password, notificationsEnabled } = await request.json();
     
     const updates: Partial<import('@/types').User> = {};
     if (username !== undefined) updates.username = username;
     if (email !== undefined) updates.email = email;
     if (avatarColor !== undefined) updates.avatarColor = avatarColor;
+    if (notificationsEnabled !== undefined) updates.notificationsEnabled = notificationsEnabled;
     
     if (password) {
       const { hashPassword } = await import('@/lib/auth');

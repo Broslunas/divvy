@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bell, BellOff, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Bell, X } from 'lucide-react';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -14,15 +14,36 @@ export default function PushNotificationManager() {
   const [permission, setPermission] = useState<NotificationPermission | 'unavailable'>('default');
   const [dismissed, setDismissed] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+
+  const refreshState = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (!res.ok) {
+        setNotificationsEnabled(null);
+        return;
+      }
+      const user = await res.json();
+      setNotificationsEnabled(user.notificationsEnabled ?? false);
+    } catch {
+      setNotificationsEnabled(null);
+    }
+  }, []);
 
   useEffect(() => {
+    refreshState();
+
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       setPermission('unavailable');
       return;
     }
     setPermission(Notification.permission);
     checkSubscription();
-  }, []);
+
+    const handleToggle = () => refreshState();
+    window.addEventListener('notifications-toggle', handleToggle);
+    return () => window.removeEventListener('notifications-toggle', handleToggle);
+  }, [refreshState]);
 
   async function checkSubscription() {
     try {
@@ -67,24 +88,6 @@ export default function PushNotificationManager() {
     }
   }
 
-  async function unsubscribe() {
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await sub.unsubscribe();
-        await fetch('/api/notifications/subscribe', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: sub.endpoint })
-        });
-      }
-      setIsSubscribed(false);
-    } catch (e) {
-      console.error('Error unsubscribing:', e);
-    }
-  }
-
   async function requestPermission() {
     const result = await Notification.requestPermission();
     setPermission(result);
@@ -93,7 +96,7 @@ export default function PushNotificationManager() {
     }
   }
 
-  if (permission === 'unavailable' || permission === 'granted' || dismissed) return null;
+  if (notificationsEnabled === null || !notificationsEnabled || permission === 'unavailable' || permission === 'granted' || dismissed) return null;
 
   return (
     <div
