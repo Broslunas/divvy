@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { User, Group, Expense, Notification } from '@/types';
+import type { User, Group, Expense } from '@/types';
 
 const DB_DIR = path.join(process.cwd(), 'data', 'db');
 
@@ -91,6 +91,5 @@ class JsonCollection<T extends { id: string }> {
 export const fallbackDb = {
   users: new JsonCollection<User>('users.json'),
   groups: new JsonCollection<Group>('groups.json'),
-  expenses: new JsonCollection<Expense>('expenses.json'),
-  notifications: new JsonCollection<Notification>('notifications.json')
+  expenses: new JsonCollection<Expense>('expenses.json')
 };

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
-import { notifyGroupMembers } from '@/lib/notifications';
 import type { SplitType, ItemizedBillItem, MultiPayer } from '@/types';
 
 interface RawItem {
@@ -108,19 +107,6 @@ export async function POST(request: Request) {
       items: normalisedItems && normalisedItems.length > 0 ? normalisedItems : undefined,
     });
 
-    // Notify other group members about the new expense
-    const notifTitle = isSettlement
-      ? `💰 ${user.username} ha registrado un pago`
-      : `💳 ${user.username} ha añadido un gasto`;
-    await notifyGroupMembers(String(groupId), user.id, {
-      title: notifTitle,
-      body: isSettlement
-        ? `${expense.title} — ${parseFloat(String(amount)).toFixed(2)}€`
-        : `${expense.title} — ${parseFloat(String(amount)).toFixed(2)}€`,
-      tag: `expense-${expense.id}`,
-      url: `/group/${groupId}/${expense.id}`
-    });
-
     return NextResponse.json(expense, { status: 201 });
   } catch (e) {
     console.error('Error creating expense:', e);
@@ -194,21 +180,6 @@ export async function PUT(request: Request) {
     const updatedExpense = await repository.expenses.update(id, updates);
     if (!updatedExpense) {
       return NextResponse.json({ error: 'No se pudo actualizar el gasto.' }, { status: 500 });
-    }
-
-    // Notify if splits were marked as paid (reimbursement)
-    if (updates.splits && Array.isArray(updates.splits)) {
-      const newlyPaid = updates.splits.filter(
-        (s: { userId?: string; isPaid?: boolean }) => s.isPaid
-      );
-      if (newlyPaid.length > 0) {
-        await notifyGroupMembers(updatedExpense.groupId, user.id, {
-          title: `✅ ${user.username} ha confirmado un pago`,
-          body: `Pago confirmado para "${updatedExpense.title}" en ${group?.name || 'el grupo'}`,
-          tag: `paid-${updatedExpense.id}`,
-          url: `/group/${updatedExpense.groupId}/${updatedExpense.id}`
-        });
-      }
     }
 
     return NextResponse.json(updatedExpense);

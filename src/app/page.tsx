@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive, Bell } from 'lucide-react';
+import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive } from 'lucide-react';
 import { calculateBalances } from '@/lib/settlement';
 import type { Group, User } from '@/types';
 import styles from './page.module.css';
-import NotificationCenter from '@/components/NotificationCenter';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -34,7 +33,6 @@ export default function Dashboard() {
   const [editEmail, setEditEmail] = useState('');
   const [editAvatarColor, setEditAvatarColor] = useState('');
   const [editPassword, setEditPassword] = useState('');
-  const [editNotifications, setEditNotifications] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
 
   // Group Archiving States
@@ -108,7 +106,6 @@ export default function Dashboard() {
       setEditEmail(user.email);
       setEditAvatarColor(user.avatarColor);
       setEditPassword('');
-      setEditNotifications(user.notificationsEnabled ?? false);
     }
   }, [user, isProfileModalOpen]);
 
@@ -124,7 +121,6 @@ export default function Dashboard() {
           email: editEmail,
           avatarColor: editAvatarColor,
           password: editPassword || undefined,
-          notificationsEnabled: editNotifications,
         }),
       });
 
@@ -135,7 +131,6 @@ export default function Dashboard() {
 
       showToast('¡Perfil actualizado con éxito!');
       setIsProfileModalOpen(false);
-      window.dispatchEvent(new Event('notifications-toggle'));
       await fetchDashboardData();
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error al actualizar perfil');
@@ -254,7 +249,6 @@ export default function Dashboard() {
           <h1 className={styles.brandName}>Div<span>vy</span></h1>
         </div>
         <div className={styles.userMenu}>
-          <NotificationCenter />
           <button
             onClick={() => setIsProfileModalOpen(true)}
             title="Editar perfil"
@@ -537,38 +531,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px solid var(--border-light)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bell size={16} style={{ color: editNotifications ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
-                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>Notificaciones</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEditNotifications(!editNotifications)}
-                  style={{
-                    width: '44px',
-                    height: '24px',
-                    borderRadius: '12px',
-                    border: 'none',
-                    backgroundColor: editNotifications ? 'var(--accent-primary)' : 'var(--border-light)',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    transition: 'background-color 0.2s',
-                  }}
-                >
-                  <span style={{
-                    position: 'absolute',
-                    top: '2px',
-                    left: editNotifications ? '22px' : '2px',
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    backgroundColor: '#FFF',
-                    transition: 'left 0.2s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }} />
-                </button>
-              </div>
+
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <button

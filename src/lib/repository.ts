@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import { connectDB } from './db';
 import { fallbackDb } from './dbFallback';
-import { MongoUser, MongoGroup, MongoExpense, MongoNotification } from './models';
-import type { User, Group, Expense, Notification } from '@/types';
+import { MongoUser, MongoGroup, MongoExpense } from './models';
+import type { User, Group, Expense } from '@/types';
 
 // Helper to generate a random 8-character invite code
 export function generateInviteCode(): string {
@@ -249,104 +249,6 @@ export const repository = {
         }
       } else {
         return fallbackDb.expenses.update(id, updates);
-      }
-    }
-  },
-
-  notifications: {
-    async getByUserId(userId: string): Promise<Notification[]> {
-      const isConnected = await connectDB();
-      if (isConnected) {
-        const list = await MongoNotification.find({ userId }).sort({ createdAt: -1 });
-        return list.map(n => n.toJSON() as Notification);
-      } else {
-        const list = await fallbackDb.notifications.findMany(n => n.userId === userId);
-        return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      }
-    },
-
-    async create(notif: Omit<Notification, 'id' | 'createdAt'>): Promise<Notification> {
-      const isConnected = await connectDB();
-      const createdAt = new Date().toISOString();
-      if (isConnected) {
-        const newNotif = await MongoNotification.create({ ...notif, createdAt });
-        return newNotif.toJSON() as Notification;
-      } else {
-        const id = generateId();
-        const newNotif: Notification = { id, ...notif, createdAt };
-        return fallbackDb.notifications.create(newNotif);
-      }
-    },
-
-    async markAsRead(id: string, userId: string): Promise<Notification | null> {
-      const isConnected = await connectDB();
-      if (isConnected) {
-        try {
-          const notif = await MongoNotification.findOneAndUpdate(
-            { _id: id, userId },
-            { isRead: true },
-            { new: true }
-          );
-          return notif ? (notif.toJSON() as Notification) : null;
-        } catch {
-          return null;
-        }
-      } else {
-        const notif = await fallbackDb.notifications.getById(id);
-        if (!notif || notif.userId !== userId) return null;
-        return fallbackDb.notifications.update(id, { isRead: true });
-      }
-    },
-
-    async markAllAsRead(userId: string): Promise<boolean> {
-      const isConnected = await connectDB();
-      if (isConnected) {
-        try {
-          await MongoNotification.updateMany({ userId }, { isRead: true });
-          return true;
-        } catch {
-          return false;
-        }
-      } else {
-        const list = await fallbackDb.notifications.findMany(n => n.userId === userId);
-        for (const n of list) {
-          await fallbackDb.notifications.update(n.id, { isRead: true });
-        }
-        return true;
-      }
-    },
-
-    async delete(id: string, userId: string): Promise<boolean> {
-      const isConnected = await connectDB();
-      if (isConnected) {
-        try {
-          const result = await MongoNotification.findOneAndDelete({ _id: id, userId });
-          return !!result;
-        } catch {
-          return false;
-        }
-      } else {
-        const notif = await fallbackDb.notifications.getById(id);
-        if (!notif || notif.userId !== userId) return false;
-        return fallbackDb.notifications.delete(id);
-      }
-    },
-
-    async deleteAll(userId: string): Promise<boolean> {
-      const isConnected = await connectDB();
-      if (isConnected) {
-        try {
-          await MongoNotification.deleteMany({ userId });
-          return true;
-        } catch {
-          return false;
-        }
-      } else {
-        const list = await fallbackDb.notifications.findMany(n => n.userId === userId);
-        for (const n of list) {
-          await fallbackDb.notifications.delete(n.id);
-        }
-        return true;
       }
     }
   }

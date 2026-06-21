@@ -4,7 +4,6 @@ export interface User {
   email: string;
   passwordHash: string;
   avatarColor: string;
-  notificationsEnabled?: boolean;
   createdAt: string;
 }
 
@@ -48,17 +47,7 @@ export interface ItemizedBillItem {
   splitValues?: Record<string, string>; // Per-user values: amount for 'exact', % for 'percentage', parts for 'shares'.
 }
 
-export interface Notification {
-  id: string;
-  userId: string;
-  title: string;
-  body: string;
-  type: 'expense_created' | 'expense_updated' | 'group_joined' | 'payment_confirmed';
-  groupId: string;
-  expenseId?: string;
-  isRead: boolean;
-  createdAt: string;
-}
+
 
 export interface Expense {
   id: string;
