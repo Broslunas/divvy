@@ -88,18 +88,19 @@ export function calculateBalances(
       }
     });
 
-    // 3. Credit the payers (subtracting what they've already received offline)
+    // 3. Credit the payers (subtracting what they've already received offline and their own share)
     if (multiPayers && multiPayers.length > 0) {
       const validPayers = multiPayers.filter(p => members.includes(p.userId));
       validPayers.forEach(payer => {
-        // Credit proportion: payer's share of unpaid amount
         const proportion = payer.amount / amount;
-        const payerCredit = payer.amount - (sumOfPaidShares * proportion);
+        const payerShare = shares[payer.userId] || 0;
+        const payerCredit = payer.amount - (sumOfPaidShares * proportion) - payerShare;
         balances[payer.userId] += payerCredit;
       });
     } else {
       if (members.includes(paidById)) {
-        balances[paidById] += (amount - sumOfPaidShares);
+        const payerShare = shares[paidById] || 0;
+        balances[paidById] += (amount - sumOfPaidShares - payerShare);
       }
     }
 
