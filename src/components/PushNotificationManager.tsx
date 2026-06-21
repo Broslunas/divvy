@@ -30,16 +30,17 @@ export default function PushNotificationManager() {
     try {
       const res = await fetch('/api/auth/me');
       if (!res.ok) {
-        if (notificationsEnabled !== null) setNotificationsEnabled(null);
+        setNotificationsEnabled(null);
         return;
       }
       const user = await res.json();
       const enabled = user.notificationsEnabled ?? false;
-      if (enabled !== notificationsEnabled) {
-        setNotificationsEnabled(enabled);
+      if (enabled && notificationsEnabled === false) {
+        setDismissed(false);
       }
+      setNotificationsEnabled(enabled);
     } catch {
-      if (notificationsEnabled !== null) setNotificationsEnabled(null);
+      setNotificationsEnabled(null);
     }
   }, [notificationsEnabled]);
 
@@ -131,6 +132,7 @@ export default function PushNotificationManager() {
 
       setPermission('granted');
       setDismissed(true);
+      window.dispatchEvent(new Event('notifications-subscribed'));
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al activar notificaciones.';
       setErrorMsg(msg);
@@ -142,12 +144,14 @@ export default function PushNotificationManager() {
 
   async function requestPermission() {
     setErrorMsg('');
+    if (Notification.permission === 'denied') {
+      setErrorMsg('Permiso denegado. Actívalo desde la configuración del navegador (🔒 junto a la URL).');
+      return;
+    }
     const result = await Notification.requestPermission();
     setPermission(result);
     if (result === 'granted') {
       await subscribe();
-    } else if (result === 'denied') {
-      setErrorMsg('Permiso denegado. Actívalo desde la configuración del navegador.');
     }
   }
 
@@ -164,7 +168,8 @@ export default function PushNotificationManager() {
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
-        maxWidth: 'calc(100% - 32px)'
+        maxWidth: 'calc(100% - 32px)',
+        width: '420px',
       }}
     >
       <div
@@ -200,7 +205,7 @@ export default function PushNotificationManager() {
             flexShrink: 0
           }}
         >
-          {activating ? 'Activando...' : 'Activar'}
+          {activating ? '...' : 'Activar'}
         </button>
         <button
           onClick={() => setDismissed(true)}
