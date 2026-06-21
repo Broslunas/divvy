@@ -7,13 +7,13 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   avatarColor: { type: String, required: true },
-  notificationsEnabled: { type: Boolean, default: false },
+  notificationsEnabled: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
     transform(doc, ret: any) {
       ret.id = ret._id.toString();
-      ret.notificationsEnabled = ret.notificationsEnabled || false;
+      ret.notificationsEnabled = ret.notificationsEnabled ?? true;
       delete ret._id;
       delete ret.__v;
     }
@@ -114,18 +114,23 @@ const ExpenseSchema = new mongoose.Schema({
   }
 });
 
-// Push Subscription Schema
-const PushSubscriptionSchema = new mongoose.Schema({
+// Notification Schema
+const NotificationSchema = new mongoose.Schema({
   userId: { type: String, required: true },
-  endpoint: { type: String, required: true, unique: true },
-  p256dh: { type: String, required: true },
-  auth: { type: String, required: true },
-  userAgent: { type: String },
+  title: { type: String, required: true },
+  body: { type: String, required: true },
+  type: { type: String, required: true }, // 'expense_created' | 'expense_updated' | 'group_joined' | 'payment_confirmed'
+  groupId: { type: String, required: true },
+  expenseId: { type: String },
+  isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
     transform(doc, ret: any) {
       ret.id = ret._id.toString();
+      if (ret.createdAt) {
+        ret.createdAt = ret.createdAt.toISOString();
+      }
       delete ret._id;
       delete ret.__v;
     }
@@ -136,4 +141,4 @@ const PushSubscriptionSchema = new mongoose.Schema({
 export const MongoUser = mongoose.models.User || mongoose.model('User', UserSchema);
 export const MongoGroup = mongoose.models.Group || mongoose.model('Group', GroupSchema);
 export const MongoExpense = mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema);
-export const MongoPushSubscription = mongoose.models.PushSubscription || mongoose.model('PushSubscription', PushSubscriptionSchema);
+export const MongoNotification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);

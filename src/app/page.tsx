@@ -6,6 +6,7 @@ import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive, Bell } f
 import { calculateBalances } from '@/lib/settlement';
 import type { Group, User } from '@/types';
 import styles from './page.module.css';
+import NotificationCenter from '@/components/NotificationCenter';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -253,6 +254,7 @@ export default function Dashboard() {
           <h1 className={styles.brandName}>Div<span>vy</span></h1>
         </div>
         <div className={styles.userMenu}>
+          <NotificationCenter />
           <button
             onClick={() => setIsProfileModalOpen(true)}
             title="Editar perfil"
@@ -538,7 +540,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px solid var(--border-light)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Bell size={16} style={{ color: editNotifications ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
-                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>Notificaciones push</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>Notificaciones</span>
                 </div>
                 <button
                   type="button"

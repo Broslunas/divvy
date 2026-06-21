@@ -48,13 +48,15 @@ export interface ItemizedBillItem {
   splitValues?: Record<string, string>; // Per-user values: amount for 'exact', % for 'percentage', parts for 'shares'.
 }
 
-export interface PushSubscription {
+export interface Notification {
   id: string;
   userId: string;
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-  userAgent?: string;
+  title: string;
+  body: string;
+  type: 'expense_created' | 'expense_updated' | 'group_joined' | 'payment_confirmed';
+  groupId: string;
+  expenseId?: string;
+  isRead: boolean;
   createdAt: string;
 }
 
