@@ -3,9 +3,9 @@
 import { useState, useEffect, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  ArrowLeft, Copy, Plus, Trash2, Loader2, ClipboardCheck, HelpCircle, 
+  ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle, 
   Search, SlidersHorizontal, FileSpreadsheet, CheckSquare, Square, 
-  Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode
+  Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings
 } from 'lucide-react';
 import AddExpenseModal from '@/components/AddExpenseModal';
 import DebtSettlement from '@/components/DebtSettlement';
@@ -25,6 +25,17 @@ const CATEGORY_COLORS: Record<string, string> = {
   Otros: '#8E8D8A', // Warm Gray
 };
 
+const getCurrencySymbol = (code?: string) => {
+  const symbols: Record<string, string> = {
+    EUR: '€',
+    USD: '$',
+    GBP: '£',
+    JPY: '¥',
+    MXN: '$',
+  };
+  return symbols[code || 'EUR'] || '€';
+};
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -39,7 +50,15 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'gastos' | 'liquidar' | 'stats' | 'notas'>('gastos');
+  const [activeTab, setActiveTab] = useState<'gastos' | 'liquidar' | 'stats' | 'notas' | 'config'>('gastos');
+
+  // Settings tab form states
+  const [settingsName, setSettingsName] = useState('');
+  const [settingsDescription, setSettingsDescription] = useState('');
+  const [settingsBudget, setSettingsBudget] = useState('');
+  const [settingsHasBudget, setSettingsHasBudget] = useState(false);
+  const [settingsCurrency, setSettingsCurrency] = useState('EUR');
+  const [savingSettings, setSavingSettings] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   // Expandable expense detail card tracking
@@ -88,6 +107,13 @@ export default function GroupDetailPage({ params }: PageProps) {
       setGroup(data.group);
       setMembers(data.members);
       setExpenses(data.expenses);
+
+      // Update config/settings form values
+      setSettingsName(data.group.name || '');
+      setSettingsDescription(data.group.description || '');
+      setSettingsBudget(data.group.budget && data.group.budget > 0 ? data.group.budget.toString() : '');
+      setSettingsHasBudget(!!(data.group.budget && data.group.budget > 0));
+      setSettingsCurrency(data.group.currency || 'EUR');
     } catch (e: unknown) {
       console.error(e);
       showToast('Error de conexión o permisos.');
@@ -107,6 +133,13 @@ export default function GroupDetailPage({ params }: PageProps) {
     setCopied(true);
     showToast('¡Código de invitación copiado!');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyInviteLink = () => {
+    if (!group) return;
+    const link = `${window.location.origin}/join/${group.inviteCode}`;
+    navigator.clipboard.writeText(link);
+    showToast('¡Enlace de invitación copiado!');
   };
 
   const handleSaveBudget = async (budget: number) => {
@@ -136,6 +169,40 @@ export default function GroupDetailPage({ params }: PageProps) {
       await fetchGroupDetails();
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Error al guardar las notas');
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settingsName.trim()) {
+      showToast('El nombre del grupo no puede estar vacío.');
+      return;
+    }
+
+    setSavingSettings(true);
+    try {
+      const budgetVal = settingsHasBudget ? parseFloat(settingsBudget) || 0 : 0;
+      const res = await fetch(`/api/groups/${groupId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: settingsName.trim(),
+          description: settingsDescription.trim(),
+          budget: budgetVal,
+          currency: settingsCurrency
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Error al actualizar la configuración del grupo.');
+      }
+
+      showToast('Ajustes guardados correctamente.');
+      await fetchGroupDetails();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al guardar los ajustes.');
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -413,17 +480,19 @@ export default function GroupDetailPage({ params }: PageProps) {
       <main className={styles.mainContent}>
         
         {/* Budget Progress Bar */}
-        <section style={{ marginBottom: '20px' }}>
-          <BudgetProgress
-            totalSpent={totalSpent}
-            currentBudget={group.budget || 0}
-            currency="€"
-            onSaveBudget={handleSaveBudget}
-          />
-        </section>
+        {group.budget && group.budget > 0 ? (
+          <section style={{ marginBottom: '20px' }}>
+            <BudgetProgress
+              totalSpent={totalSpent}
+              currentBudget={group.budget}
+              currency={getCurrencySymbol(group.currency)}
+              onSaveBudget={handleSaveBudget}
+            />
+          </section>
+        ) : null}
 
         {/* Tabs */}
-        <div className={styles.tabs} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div className={styles.tabs} style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
           <button className={`${styles.tabBtn} ${activeTab === 'gastos' ? styles.active : ''}`} onClick={() => setActiveTab('gastos')}>
             Gastos
           </button>
@@ -435,6 +504,9 @@ export default function GroupDetailPage({ params }: PageProps) {
           </button>
           <button className={`${styles.tabBtn} ${activeTab === 'notas' ? styles.active : ''}`} onClick={() => setActiveTab('notas')}>
             Notas
+          </button>
+          <button className={`${styles.tabBtn} ${activeTab === 'config' ? styles.active : ''}`} onClick={() => setActiveTab('config')}>
+            Ajustes
           </button>
         </div>
 
@@ -580,19 +652,9 @@ export default function GroupDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Invite Info Box */}
-            <section className={styles.inviteCard}>
-              <div className={styles.inviteHeader}>
-                <span className={styles.inviteTitle}>Código del grupo</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Invita miembros</span>
-              </div>
-              <div className={styles.codeBox}>
-                <span>{group.inviteCode}</span>
-                <button className={styles.copyBtn} onClick={handleCopyCode}>
-                  {copied ? <ClipboardCheck size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-
+            {/* Members List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Miembros:</span>
               <div className={styles.membersList}>
                 {members.map(member => (
                   <div key={member.id} className={styles.memberPill}>
@@ -601,7 +663,7 @@ export default function GroupDetailPage({ params }: PageProps) {
                   </div>
                 ))}
               </div>
-            </section>
+            </div>
 
             {/* Expenses Feed */}
             <section className={styles.expenseList}>
@@ -667,7 +729,10 @@ export default function GroupDetailPage({ params }: PageProps) {
                         </div>
 
                         <div className={styles.expenseRight}>
-                          <span className={styles.expenseAmount}>{expense.amount.toFixed(2)}€</span>
+                          <span className={styles.expenseAmount}>
+                            {expense.amount.toFixed(2)}
+                            {getCurrencySymbol(group.currency)}
+                          </span>
                           {(isPayerCurrentUser || expense.paidById === currentUser?.id) && (
                             <button
                               className={styles.deleteBtn}
@@ -695,7 +760,10 @@ export default function GroupDetailPage({ params }: PageProps) {
                               {expense.items.map((item, index) => (
                                 <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
                                   <span>{item.name}</span>
-                                  <span style={{ fontWeight: 700 }}>{item.amount.toFixed(2)}€</span>
+                                  <span style={{ fontWeight: 700 }}>
+                                    {item.amount.toFixed(2)}
+                                    {getCurrencySymbol(group.currency)}
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -724,7 +792,8 @@ export default function GroupDetailPage({ params }: PageProps) {
                                 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <span style={{ fontWeight: 700, color: isPaid ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                                    {share.toFixed(2)}€
+                                    {share.toFixed(2)}
+                                    {getCurrencySymbol(group.currency)}
                                   </span>
                                   
                                   {isPayer ? (
@@ -799,6 +868,141 @@ export default function GroupDetailPage({ params }: PageProps) {
               initialNotes={group.notes || ''}
               onSaveNotes={handleSaveNotes}
             />
+          </section>
+        )}
+
+        {/* Tab 5: Settings / Config */}
+        {activeTab === 'config' && (
+          <section className="animate-fade-in" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '20px', boxShadow: 'var(--shadow-subtle)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.05rem', marginBottom: '20px', letterSpacing: '-0.02em' }}>
+              <Settings size={20} style={{ color: 'var(--accent-primary)' }} />
+              <span>Configuración del Grupo</span>
+            </div>
+
+            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Group Name */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Nombre del Grupo</label>
+                <input
+                  type="text"
+                  value={settingsName}
+                  onChange={(e) => setSettingsName(e.target.value)}
+                  placeholder="Ej. Viaje a París"
+                  style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-primary)' }}
+                  required
+                />
+              </div>
+
+              {/* Group Description */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Descripción (Opcional)</label>
+                <textarea
+                  value={settingsDescription}
+                  onChange={(e) => setSettingsDescription(e.target.value)}
+                  placeholder="Ej. Gastos compartidos de las vacaciones"
+                  rows={2}
+                  style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-primary)', resize: 'none', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              {/* Currency Selector */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Divisa Principal</label>
+                <select
+                  value={settingsCurrency}
+                  onChange={(e) => setSettingsCurrency(e.target.value)}
+                  style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-primary)', cursor: 'pointer' }}
+                >
+                  <option value="EUR">Euro (€)</option>
+                  <option value="USD">Dólar ($)</option>
+                  <option value="GBP">Libra (£)</option>
+                  <option value="JPY">Yen (¥)</option>
+                  <option value="MXN">Peso Mexicano ($)</option>
+                </select>
+              </div>
+
+              {/* Budget Limit Config */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id="enableBudget"
+                    checked={settingsHasBudget}
+                    onChange={(e) => {
+                      setSettingsHasBudget(e.target.checked);
+                      if (!e.target.checked) setSettingsBudget('');
+                    }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent-primary)' }}
+                  />
+                  <label htmlFor="enableBudget" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    Establecer límite de presupuesto
+                  </label>
+                </div>
+
+                {settingsHasBudget && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', animation: 'fadeIn 0.2s ease', marginLeft: '28px' }}>
+                    <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Presupuesto límite</label>
+                    <div style={{ position: 'relative', maxWidth: '200px' }}>
+                      <input
+                        type="text"
+                        placeholder="Ej. 1000"
+                        value={settingsBudget}
+                        onChange={(e) => {
+                          if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) {
+                            setSettingsBudget(e.target.value);
+                          }
+                        }}
+                        style={{ width: '100%', padding: '10px 12px 10px 24px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-primary)', fontWeight: 700 }}
+                      />
+                      <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                        {getCurrencySymbol(settingsCurrency)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Save Button */}
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="btn btn-primary"
+                style={{ padding: '12px', fontSize: '0.85rem', marginTop: '10px' }}
+              >
+                {savingSettings ? 'Guardando...' : 'Guardar Ajustes'}
+              </button>
+            </form>
+
+            {/* Invite Info Box */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '20px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Invitar Miembros
+              </span>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
+                Comparte el código o envía el enlace de invitación directa:
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>CÓDIGO</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '1rem', letterSpacing: '0.05em' }}>{group.inviteCode}</span>
+                  </div>
+                  <button className={styles.copyBtn} onClick={handleCopyCode}>
+                    {copied ? '¡Copiado!' : 'Copiar Código'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyInviteLink}
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '0.8rem', fontWeight: 700, borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', backgroundColor: 'transparent' }}
+                >
+                  <Copy size={14} /> Copiar Enlace de Invitación
+                </button>
+              </div>
+            </div>
           </section>
         )}
       </main>

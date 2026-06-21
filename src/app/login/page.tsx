@@ -14,12 +14,21 @@ export default function LoginPage() {
   const [checkAuth, setCheckAuth] = useState(true);
   const [error, setError] = useState('');
 
+  const [redirectTo, setRedirectTo] = useState('/');
+
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirectTo');
+    if (redirect) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRedirectTo(redirect);
+    }
+
     // Check if already authenticated
     fetch('/api/auth/me')
       .then((res) => {
         if (res.ok) {
-          router.replace('/');
+          router.replace(redirect || '/');
         } else {
           setCheckAuth(false);
         }
@@ -50,7 +59,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Error al iniciar sesión');
       }
 
-      router.replace('/');
+      router.replace(redirectTo);
       router.refresh();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error. Inténtalo de nuevo.';
@@ -114,7 +123,7 @@ export default function LoginPage() {
 
         <div className={styles.footer}>
           ¿No tienes una cuenta?{' '}
-          <Link href="/register" className={styles.footerLink}>
+          <Link href={`/register${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`} className={styles.footerLink}>
             Regístrate gratis
           </Link>
         </div>
