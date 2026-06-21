@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
 import { notifyUser } from '@/lib/push';
-import { sendNewExpenseEmail, sendSettlementReceivedEmail, sendSettlementSentEmail } from '@/lib/mail';
+import { sendNewExpenseEmail, sendSettlementReceivedEmail, sendSettlementSentEmail, sendExpenseUpdatedEmail, sendExpenseDeletedEmail } from '@/lib/mail';
 import type { SplitType, ItemizedBillItem, MultiPayer } from '@/types';
 
 interface RawItem {
@@ -223,6 +223,38 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'No se pudo eliminar el gasto.' }, { status: 500 });
     }
 
+    // Notify group members asynchronously in background
+    (async () => {
+      try {
+        const deleterName = user.username;
+        for (const memberId of group.members) {
+          if (memberId !== user.id) {
+            const member = await repository.users.getById(memberId);
+            if (member) {
+              await notifyUser(memberId, {
+                title: `Gasto eliminado en "${group.name}"`,
+                message: `"${deleterName}" ha eliminado el gasto "${expense.title}" por ${expense.amount.toFixed(2)}€.`,
+                link: `/group/${group.id}`,
+                type: 'expense'
+              });
+
+              await sendExpenseDeletedEmail(
+                member.email,
+                member.username,
+                group.name,
+                deleterName,
+                expense.title,
+                expense.amount,
+                group.id
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error sending background notifications for deleted expense:', err);
+      }
+    })();
+
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error('Error deleting expense:', e);
@@ -259,6 +291,39 @@ export async function PUT(request: Request) {
     if (!updatedExpense) {
       return NextResponse.json({ error: 'No se pudo actualizar el gasto.' }, { status: 500 });
     }
+
+    // Notify group members asynchronously in background
+    (async () => {
+      try {
+        const editorName = user.username;
+        for (const memberId of group.members) {
+          if (memberId !== user.id) {
+            const member = await repository.users.getById(memberId);
+            if (member) {
+              await notifyUser(memberId, {
+                title: `Gasto modificado en "${group.name}"`,
+                message: `"${editorName}" ha modificado el gasto "${expense.title}".`,
+                link: `/group/${group.id}`,
+                type: 'expense'
+              });
+
+              await sendExpenseUpdatedEmail(
+                member.email,
+                member.username,
+                group.name,
+                editorName,
+                expense.title,
+                updatedExpense.title,
+                updatedExpense.amount,
+                group.id
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error sending background notifications for updated expense:', err);
+      }
+    })();
 
     return NextResponse.json(updatedExpense);
   } catch (e) {

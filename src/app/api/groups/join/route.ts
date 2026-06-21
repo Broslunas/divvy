@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { repository } from '@/lib/repository';
+import { notifyUser } from '@/lib/push';
+import { sendMemberJoinedEmail } from '@/lib/mail';
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +27,36 @@ export async function POST(request: Request) {
     if (!updatedGroup) {
       return NextResponse.json({ error: 'No se pudo unir al grupo.' }, { status: 500 });
     }
+
+    // Notify other group members asynchronously in background
+    (async () => {
+      try {
+        const joinerName = user.username;
+        for (const memberId of group.members) {
+          if (memberId !== user.id) {
+            const member = await repository.users.getById(memberId);
+            if (member) {
+              await notifyUser(memberId, {
+                title: `Nuevo miembro en "${group.name}"`,
+                message: `"${joinerName}" se ha unido al grupo.`,
+                link: `/group/${group.id}`,
+                type: 'system'
+              });
+
+              await sendMemberJoinedEmail(
+                member.email,
+                member.username,
+                group.name,
+                joinerName,
+                group.id
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error sending background notifications for joined member:', err);
+      }
+    })();
 
     return NextResponse.json(updatedGroup);
   } catch (e) {

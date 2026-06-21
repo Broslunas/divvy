@@ -301,3 +301,141 @@ export async function sendSettlementSentEmail(
 
   return sendEmail({ toEmail, toName, subject, html, text });
 }
+
+// 4. Notify when an expense is updated
+export async function sendExpenseUpdatedEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  editorName: string,
+  originalTitle: string,
+  newTitle: string,
+  newAmount: number,
+  groupId: string
+) {
+  const subject = `Gasto modificado en "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: ${editorName} ha modificado el gasto "${originalTitle}" (ahora: "${newTitle}" por ${newAmount.toFixed(2)}€) en el grupo "${groupName}". Ver grupo en: https://www.divvy.es/group/${groupId}`;
+  
+  const bodyContent = `
+    <p class="text">
+      Te informamos que <strong>${editorName}</strong> ha actualizado un gasto en tu grupo <strong>"${groupName}"</strong>.
+    </p>
+    <div class="info-box">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-bottom: 6px;">Gasto original:</td>
+          <td style="font-size: 14px; color: #1C1C1E; text-align: right; padding-bottom: 6px; text-decoration: line-through;">${originalTitle}</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px; padding-bottom: 6px;">Nuevo concepto:</td>
+          <td style="font-size: 14px; color: #1C1C1E; font-weight: 700; text-align: right; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px; padding-bottom: 6px;">${newTitle}</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">Nuevo importe:</td>
+          <td style="font-size: 16px; color: #C87A53; font-weight: 800; text-align: right; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">${newAmount.toFixed(2)}€</td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Detalles del Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 5. Notify when an expense is deleted
+export async function sendExpenseDeletedEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  deleterName: string,
+  expenseTitle: string,
+  expenseAmount: number,
+  groupId: string
+) {
+  const subject = `Gasto eliminado en "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: ${deleterName} ha eliminado el gasto "${expenseTitle}" (importe original: ${expenseAmount.toFixed(2)}€) en el grupo "${groupName}". Ver grupo en: https://www.divvy.es/group/${groupId}`;
+  
+  const bodyContent = `
+    <p class="text">
+      Te informamos que <strong>${deleterName}</strong> ha eliminado un gasto del grupo <strong>"${groupName}"</strong>.
+    </p>
+    <div class="info-box" style="border-left-color: #A09E9B;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-bottom: 6px;">Gasto eliminado:</td>
+          <td style="font-size: 14px; color: #1C1C1E; font-weight: 700; text-align: right; padding-bottom: 6px; text-decoration: line-through;">${expenseTitle}</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px;">Importe original:</td>
+          <td style="font-size: 14px; color: #A09E9B; font-weight: 700; text-align: right; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px; text-decoration: line-through;">${expenseAmount.toFixed(2)}€</td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 6. Notify when a new member joins the group
+export async function sendMemberJoinedEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  joinerName: string,
+  groupId: string
+) {
+  const subject = `Nuevo miembro en "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: ${joinerName} se ha unido al grupo "${groupName}". ¡Ya podéis empezar a compartir gastos! Ver grupo en: https://www.divvy.es/group/${groupId}`;
+  
+  const bodyContent = `
+    <p class="text">
+      ¡Buenas noticias! <strong>${joinerName}</strong> se ha unido al grupo <strong>"${groupName}"</strong>.
+    </p>
+    <p class="text" style="font-size: 13px; color: #6E6D6A;">
+      Ya podéis empezar a añadir gastos compartidos y liquidar cuentas entre vosotros de forma rápida y sencilla.
+    </p>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ir al Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 7. Notify when group settings are updated
+export async function sendGroupUpdatedEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  editorName: string,
+  groupId: string,
+  detailsList: string[]
+) {
+  const subject = `Ajustes actualizados en "${groupName}" — Divvy`;
+  
+  const detailsText = detailsList.join(', ');
+  const text = `Hola ${toName}: ${editorName} ha actualizado los ajustes en el grupo "${groupName}" (${detailsText}). Ver grupo en: https://www.divvy.es/group/${groupId}`;
+  
+  const detailsHtml = detailsList.map(detail => `<li style="margin-bottom: 6px;">${detail}</li>`).join('');
+  const bodyContent = `
+    <p class="text">
+      Te informamos que <strong>${editorName}</strong> ha actualizado la configuración de tu grupo <strong>"${groupName}"</strong>:
+    </p>
+    <div class="info-box" style="border-left-color: #4A5D4E;">
+      <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #1C1C1E;">
+        ${detailsHtml}
+      </ul>
+    </div>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
