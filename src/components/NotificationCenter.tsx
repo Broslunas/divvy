@@ -92,7 +92,7 @@ export default function NotificationCenter() {
 
     try {
       setPermissionState(window.Notification.permission);
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      const registration = await navigator.serviceWorker.ready;
       
       if (registration) {
         const subscription = await registration.pushManager.getSubscription();
@@ -116,11 +116,10 @@ export default function NotificationCenter() {
 
     setLoadingPush(true);
     try {
-      console.log('Registering/getting Service Worker...');
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      const registration = await navigator.serviceWorker.ready;
 
       if (!registration) {
-        throw new Error('El registro del Service Worker en el navegador falló o retornó vacío.');
+        throw new Error('El Service Worker no está listo o activo.');
       }
 
       const existingSubscription = await registration.pushManager.getSubscription();
