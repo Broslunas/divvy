@@ -1,6 +1,6 @@
 # Features a añadir
 
-- [ ] Modo offline con sincronización en segundo plano
+- [x] Modo offline con sincronización en segundo plano
 - [ ] Escáner de tickets con OCR
 - [ ] Pagos integrados (Stripe / PayPal)
 - [ ] Presupuestos recurrentes mensuales

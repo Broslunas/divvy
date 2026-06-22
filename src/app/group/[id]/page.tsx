@@ -20,6 +20,8 @@ import CountdownWidget from '@/components/CountdownWidget';
 import BonoCulturalHub from '@/components/BonoCulturalHub';
 import PrintableInvoice from '@/components/PrintableInvoice';
 import type { Group, Expense, User } from '@/types';
+import { offlineDb } from '@/lib/offline-db';
+import { useOfflineSync } from '@/lib/useOfflineSync';
 import styles from './group.module.css';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -59,7 +61,12 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   
   const [loading, setLoading] = useState(true);
+  const [isShowingCachedData, setIsShowingCachedData] = useState(false);
   const [activeTab, setActiveTab] = useState<'bono' | 'gastos' | 'liquidar' | 'stats' | 'notas' | 'config'>('gastos');
+
+  // Offline sync hook — used to queue mutations and refresh pending count
+  // (callback wired up in useEffect below, after fetchGroupDetails is defined)
+  const { isOnline, refreshPendingCount } = useOfflineSync();
 
   // Settings tab form states
   const [settingsName, setSettingsName] = useState('');
@@ -103,10 +110,25 @@ export default function GroupDetailPage({ params }: PageProps) {
       setCurrentUser(userData);
 
       const detailRes = await fetch(`/api/groups/${groupId}`);
-      if (!detailRes.ok) {
-        throw new Error('Error al cargar los detalles del grupo.');
+
+      let data: { group: Group; members: Omit<User, 'passwordHash'>[]; expenses: Expense[] };
+
+      if (!detailRes.ok || detailRes.status === 503) {
+        // Offline or server error: serve from IndexedDB cache
+        const cached = await offlineDb.cache.getGroupDetail<typeof data>(groupId);
+        if (cached) {
+          data = cached;
+          setIsShowingCachedData(true);
+        } else {
+          throw new Error('Error al cargar los detalles del grupo.');
+        }
+      } else {
+        data = await detailRes.json();
+        // Save fresh data to IndexedDB for offline use
+        await offlineDb.cache.saveGroupDetail(groupId, data);
+        setIsShowingCachedData(false);
       }
-      const data = await detailRes.json();
+
       setGroup(data.group);
       setMembers(data.members);
       setExpenses(data.expenses);
@@ -134,6 +156,15 @@ export default function GroupDetailPage({ params }: PageProps) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGroupDetails();
+  }, [fetchGroupDetails]);
+
+  // Re-fetch data when connection is restored (picks up synced changes)
+  useEffect(() => {
+    const handleOnline = () => {
+      fetchGroupDetails();
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
   }, [fetchGroupDetails]);
 
   const handleCopyCode = () => {
@@ -234,6 +265,34 @@ export default function GroupDetailPage({ params }: PageProps) {
   };
 
   const handleAddExpense = async (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => {
+    if (!isOnline) {
+      // Create a temporary optimistic expense to show in the UI immediately
+      const tempId = `offline-${Date.now()}`;
+      const optimisticExpense: Expense = {
+        id: tempId,
+        groupId,
+        createdAt: new Date().toISOString(),
+        ...expenseData,
+      };
+
+      // Queue for later sync
+      await offlineDb.queue.add({
+        id: tempId,
+        method: 'POST',
+        url: '/api/expenses',
+        body: { ...expenseData, groupId },
+        createdAt: new Date().toISOString(),
+        label: `Añadir gasto "${expenseData.title}"`,
+        optimisticData: optimisticExpense,
+      });
+
+      // Optimistic update: add the temp expense to local state
+      setExpenses((prev) => [optimisticExpense, ...prev]);
+      await refreshPendingCount();
+      showToast('Gasto guardado localmente — se sincronizará cuando vuelva la conexión');
+      return;
+    }
+
     try {
       const res = await fetch('/api/expenses', {
         method: 'POST',
@@ -257,6 +316,22 @@ export default function GroupDetailPage({ params }: PageProps) {
   const handleDeleteExpense = async (e: React.MouseEvent, expenseId: string) => {
     e.stopPropagation();
     if (!confirm('¿Estás seguro de que quieres eliminar este gasto?')) return;
+
+    if (!isOnline) {
+      const opId = `offline-del-${Date.now()}`;
+      await offlineDb.queue.add({
+        id: opId,
+        method: 'DELETE',
+        url: `/api/expenses?id=${expenseId}`,
+        createdAt: new Date().toISOString(),
+        label: 'Eliminar gasto',
+      });
+      // Optimistic: remove from local state
+      setExpenses((prev) => prev.filter((ex) => ex.id !== expenseId));
+      await refreshPendingCount();
+      showToast('Gasto eliminado localmente — se sincronizará cuando vuelva la conexión');
+      return;
+    }
 
     try {
       const res = await fetch(`/api/expenses?id=${expenseId}`, {
@@ -320,6 +395,27 @@ export default function GroupDetailPage({ params }: PageProps) {
       }
       return s;
     });
+
+    if (!isOnline) {
+      const opId = `offline-paid-${Date.now()}`;
+      await offlineDb.queue.add({
+        id: opId,
+        method: 'PUT',
+        url: '/api/expenses',
+        body: { id: expense.id, splits: updatedSplits },
+        createdAt: new Date().toISOString(),
+        label: `Marcar cuota de "${expense.title}" como ${!currentIsPaid ? 'pagada' : 'pendiente'}`,
+      });
+      // Optimistic: update local state
+      setExpenses((prev) =>
+        prev.map((ex) =>
+          ex.id === expense.id ? { ...ex, splits: updatedSplits } : ex
+        )
+      );
+      await refreshPendingCount();
+      showToast('Estado actualizado localmente — se sincronizará cuando vuelva la conexión');
+      return;
+    }
 
     try {
       const res = await fetch('/api/expenses', {
@@ -494,6 +590,20 @@ export default function GroupDetailPage({ params }: PageProps) {
   return (
     <div className={`${styles.groupDetail} animate-fade-in`}>
       <div className="interactive-layout-wrapper">
+        {/* Cached data notice */}
+        {isShowingCachedData && (
+          <div style={{
+            background: 'rgba(200, 122, 83, 0.08)',
+            borderBottom: '1px solid rgba(200, 122, 83, 0.2)',
+            padding: '6px 16px',
+            fontSize: '0.72rem',
+            color: 'var(--accent-primary)',
+            fontWeight: 600,
+            textAlign: 'center',
+          }}>
+            📦 Mostrando datos guardados localmente
+          </div>
+        )}
         {/* Header */}
       <header className={styles.header}>
         <button className={styles.backBtn} onClick={() => router.push('/app')} title="Volver al inicio">

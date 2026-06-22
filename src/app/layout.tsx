@@ -59,6 +59,7 @@ export const metadata: Metadata = {
 
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import CookieConsent from "@/components/CookieConsent";
+import OfflineBanner from "@/components/OfflineBanner";
 
 export default function RootLayout({
   children,
@@ -74,6 +75,7 @@ export default function RootLayout({
       </head>
       <body>
         <ServiceWorkerRegister />
+        <OfflineBanner />
         {children}
         <CookieConsent />
       </body>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'divvy-cache-v1';
+const CACHE_NAME = 'divvy-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/app',
@@ -7,6 +7,15 @@ const ASSETS_TO_CACHE = [
   '/icons/icon-512x512.svg',
   '/globals.css'
 ];
+
+// API routes that we serve with a Network-First strategy (fall back to cache)
+const API_CACHE_PATTERNS = [
+  /^\/api\/groups$/,
+  /^\/api\/groups\/[^/]+$/,
+];
+
+// Separate cache name for API responses
+const API_CACHE_NAME = 'divvy-api-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -24,7 +33,7 @@ self.addEventListener('activate', (event) => {
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME) {
+            if (cache !== CACHE_NAME && cache !== API_CACHE_NAME) {
               return caches.delete(cache);
             }
           })
@@ -34,35 +43,102 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// ── Fetch handler ─────────────────────────────────────────────────────────────
+
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Only handle same-origin requests
+  if (url.origin !== self.location.origin) return;
+
+  const pathname = url.pathname;
+
+  // Network-First for GET API routes we want to cache
+  if (
+    request.method === 'GET' &&
+    API_CACHE_PATTERNS.some((pattern) => pattern.test(pathname))
+  ) {
+    event.respondWith(networkFirstAPI(request));
     return;
   }
 
+  // Skip non-GET requests entirely (they are handled by the app / sync queue)
+  if (request.method !== 'GET') return;
+
+  // Cache-First with network fallback for static assets
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((response) => {
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(request).then((response) => {
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+          cache.put(request, responseToCache);
         });
         return response;
       }).catch(() => {
-        // Fallback for offline routing could go here
+        // No cached match and network failed — nothing we can do for static assets
       });
     })
   );
 });
 
-// Service worker is now solely used for offline assets caching and push notifications.
+/**
+ * Network-First strategy for API GET requests.
+ * On success: update the API cache and return the fresh response.
+ * On failure (offline): serve from the API cache if available.
+ */
+async function networkFirstAPI(request) {
+  try {
+    const networkResponse = await fetch(request.clone());
 
-// Push notifications events
+    if (networkResponse.ok) {
+      const cache = await caches.open(API_CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch {
+    // Network failed — try cache
+    const cached = await caches.match(request, { cacheName: API_CACHE_NAME });
+    if (cached) return cached;
+
+    // Nothing in cache either — return an offline placeholder response
+    return new Response(
+      JSON.stringify({ error: 'offline', cached: false }),
+      {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
+
+// ── Background Sync ───────────────────────────────────────────────────────────
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'divvy-sync') {
+    event.waitUntil(notifyClientsToSync());
+  }
+});
+
+/**
+ * Sends a message to all open app windows so the foreground hook
+ * (useOfflineSync) processes the IndexedDB queue.
+ */
+async function notifyClientsToSync() {
+  const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  for (const client of clientList) {
+    client.postMessage({ type: 'DIVVY_SYNC' });
+  }
+}
+
+// ── Push Notifications ────────────────────────────────────────────────────────
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   try {
@@ -89,7 +165,6 @@ self.addEventListener('notificationclick', (event) => {
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window with the same path is already open, focus it
       for (const client of clientList) {
         const clientUrl = new URL(client.url);
         const targetUrl = new URL(link, client.url);
@@ -97,7 +172,6 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus();
         }
       }
-      // Otherwise open a new window
       if (clients.openWindow) {
         return clients.openWindow(link);
       }

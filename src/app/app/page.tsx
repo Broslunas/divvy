@@ -6,6 +6,7 @@ import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive } from 'l
 import { calculateBalances } from '@/lib/settlement';
 import type { Group, User } from '@/types';
 import NotificationCenter from '@/components/NotificationCenter';
+import { offlineDb } from '@/lib/offline-db';
 import styles from './page.module.css';
 
 function getMiniCountdown(targetStr: string): string {
@@ -46,6 +47,9 @@ export default function Dashboard() {
   const [totalOwedToMe, setTotalOwedToMe] = useState(0);
   const [totalIOwe, setTotalIOwe] = useState(0);
 
+  // Track whether we're showing cached (offline) data
+  const [isShowingCachedData, setIsShowingCachedData] = useState(false);
+
   // Tabs for quick actions: 'create' | 'join'
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   
@@ -85,12 +89,26 @@ export default function Dashboard() {
       const userData = await userRes.json();
       setUser(userData);
 
-      // 2. Fetch Groups
+      // 2. Fetch Groups (Network-First — SW serves cache when offline)
       const groupsRes = await fetch('/api/groups');
-      if (!groupsRes.ok) {
-        throw new Error('Error al cargar grupos');
+      let groupsData: Group[];
+
+      if (!groupsRes.ok || groupsRes.status === 503) {
+        // Offline or server error: try IndexedDB cache
+        const cached = await offlineDb.cache.getGroups<Group>();
+        if (cached) {
+          groupsData = cached;
+          setIsShowingCachedData(true);
+        } else {
+          throw new Error('Error al cargar grupos');
+        }
+      } else {
+        groupsData = await groupsRes.json();
+        // Persist fresh data to IndexedDB for future offline use
+        await offlineDb.cache.saveGroups(groupsData);
+        setIsShowingCachedData(false);
       }
-      const groupsData = await groupsRes.json();
+
       setGroups(groupsData);
 
       // 3. Fetch detailed balances for all groups
@@ -288,6 +306,20 @@ export default function Dashboard() {
 
   return (
     <div className={`${styles.dashboard} animate-fade-in`}>
+      {/* Cached data notice */}
+      {isShowingCachedData && (
+        <div style={{
+          background: 'rgba(200, 122, 83, 0.08)',
+          borderBottom: '1px solid rgba(200, 122, 83, 0.2)',
+          padding: '8px 16px',
+          fontSize: '0.75rem',
+          color: 'var(--accent-primary)',
+          fontWeight: 600,
+          textAlign: 'center',
+        }}>
+          📦 Mostrando datos guardados localmente
+        </div>
+      )}
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.brand}>
