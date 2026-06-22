@@ -1,6 +1,7 @@
 const CACHE_NAME = 'divvy-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
+  '/app',
   '/manifest.json',
   '/icons/icon-192x192.svg',
   '/icons/icon-512x512.svg',

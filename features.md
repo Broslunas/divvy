@@ -1,6 +1,5 @@
 # Features a añadir
 
-- [ ] Notificaciones push (nuevos gastos, liquidaciones, recordatorios)
 - [ ] Modo offline con sincronización en segundo plano
 - [ ] Escáner de tickets con OCR
 - [ ] Pagos integrados (Stripe / PayPal)

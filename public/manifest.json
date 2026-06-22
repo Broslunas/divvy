@@ -2,7 +2,7 @@
   "name": "Divvy Gastos Compartidos",
   "short_name": "Divvy",
   "description": "Lleva el control, división y liquidación de tus gastos grupales.",
-  "start_url": "/",
+  "start_url": "/app",
   "display": "standalone",
   "background_color": "#FAF9F6",
   "theme_color": "#C87A53",
