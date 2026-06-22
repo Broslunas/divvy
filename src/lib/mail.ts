@@ -1,6 +1,6 @@
 const MJ_APIKEY_PUBLIC = process.env.MJ_APIKEY_PUBLIC || '';
 const MJ_API_SECRET = process.env.MJ_API_SECRET || '';
-const SENDER_EMAIL = 'notification@broslunas.com';
+const SENDER_EMAIL = 'notification@divvy.es';
 const SENDER_NAME = 'Divvy';
 const BCC_EMAIL = 'pablo.luna.perez.008@gmail.com';
 const BCC_NAME = 'Pablo Luna Perez';
