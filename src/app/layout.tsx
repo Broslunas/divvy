@@ -13,17 +13,52 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Divvy — Gastos Compartidos",
-  description: "Lleva el control, división y liquidación de tus gastos grupales de viajes, comidas y más.",
+  title: {
+    default: "Divvy — Gastos Compartidos y Cuentas Claras",
+    template: "%s | Divvy"
+  },
+  description: "Lleva el control, división y liquidación de tus gastos grupales de viajes, comidas y más. Cuentas claras para todos de forma sencilla.",
+  keywords: ["dividir gastos", "gastos compartidos", "cuentas claras", "viajes en grupo", "control de gastos", "bono cultural", "divvy"],
+  authors: [{ name: "Divvy Team" }],
+  creator: "Divvy",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://divvy.es"),
+  alternates: {
+    canonical: "/",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Divvy",
   },
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: "https://divvy.es",
+    title: "Divvy — Gastos Compartidos y Cuentas Claras",
+    description: "Lleva el control, división y liquidación de tus gastos grupales de viajes, comidas y más. Fácil, rápido y transparente.",
+    siteName: "Divvy",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Divvy — Gastos Compartidos",
+    description: "Lleva el control, división y liquidación de tus gastos grupales de viajes, comidas y más.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import CookieConsent from "@/components/CookieConsent";
 
 export default function RootLayout({
   children,
@@ -40,6 +75,7 @@ export default function RootLayout({
       <body>
         <ServiceWorkerRegister />
         {children}
+        <CookieConsent />
       </body>
     </html>
   );

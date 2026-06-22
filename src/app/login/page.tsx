@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Coins, Loader2 } from 'lucide-react';
 import styles from './login.module.css';
+import Footer from '@/components/Footer';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -128,6 +129,7 @@ export default function LoginPage() {
           </Link>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

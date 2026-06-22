@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Coins, Loader2 } from 'lucide-react';
 import styles from '../login/login.module.css'; // Reuse auth styling
+import Footer from '@/components/Footer';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -65,6 +66,18 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Error al registrarse');
       }
 
+      // Automatically log in
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!loginRes.ok) {
+        router.push('/login');
+        return;
+      }
+
       router.replace(redirectTo);
       router.refresh();
     } catch (err: unknown) {
@@ -91,17 +104,17 @@ export default function RegisterPage() {
         </div>
 
         <h2 className={styles.title}>Crea tu cuenta</h2>
-        <p className={styles.subtitle}>Empieza a compartir gastos de forma equitativa.</p>
+        <p className={styles.subtitle}>Únete para empezar a gestionar tus gastos grupales.</p>
 
         {error && <div className={styles.errorMsg}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label htmlFor="username">Nombre de usuario</label>
+            <label htmlFor="username">Nombre de Usuario</label>
             <input
               id="username"
               type="text"
-              placeholder="Ej. pablo_123"
+              placeholder="Tu nombre o apodo"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className={styles.inputField}
@@ -147,6 +160,7 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
