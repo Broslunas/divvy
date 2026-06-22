@@ -1,711 +1,186 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive } from 'lucide-react';
-import { calculateBalances } from '@/lib/settlement';
-import type { Group, User } from '@/types';
-import NotificationCenter from '@/components/NotificationCenter';
-import styles from './page.module.css';
+import { useEffect } from 'react';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { Coins, Users, ArrowRight, PieChart, Bell, ChevronRight, HelpCircle } from 'lucide-react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Footer from '@/components/Footer';
+import './landing.css';
 
-function getMiniCountdown(targetStr: string): string {
-  try {
-    const hasTime = targetStr.includes('T');
-    const target = new Date(hasTime ? targetStr : targetStr + 'T00:00:00');
-    const now = new Date();
-    const diffMs = target.getTime() - now.getTime();
-
-    if (diffMs <= 0) {
-      return 'En marcha 🎉';
-    }
-
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-    if (days > 0) {
-      return `Faltan ${days}d ${hours}h`;
-    }
-    if (hours > 0) {
-      const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      return `Faltan ${hours}h ${mins}m`;
-    }
-    const mins = Math.floor(diffMs / (1000 * 60));
-    return `Faltan ${mins}m`;
-  } catch {
-    return '';
-  }
+// Register GSAP ScrollTrigger plugin on client side
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
 }
 
-export default function Dashboard() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [groups, setGroups] = useState<Group[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // Total balances calculated across all groups
-  const [totalOwedToMe, setTotalOwedToMe] = useState(0);
-  const [totalIOwe, setTotalIOwe] = useState(0);
-
-  // Tabs for quick actions: 'create' | 'join'
-  const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
-  
-  // Form fields
-  const [groupName, setGroupName] = useState('');
-  const [groupDesc, setGroupDesc] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
-  const [isBonoCreation, setIsBonoCreation] = useState(false);
-  const [bonoActivationDate, setBonoActivationDate] = useState(new Date().toISOString().split('T')[0]);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
-
-  // Edit Profile States
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [editUsername, setEditUsername] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editAvatarColor, setEditAvatarColor] = useState('');
-  const [editPassword, setEditPassword] = useState('');
-  const [profileLoading, setProfileLoading] = useState(false);
-
-  // Group Archiving States
-  const [showArchived, setShowArchived] = useState(false);
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
-  };
-
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      // 1. Verify Authentication
-      const userRes = await fetch('/api/auth/me');
-      if (!userRes.ok) {
-        router.replace('/login');
-        return;
-      }
-      const userData = await userRes.json();
-      setUser(userData);
-
-      // 2. Fetch Groups
-      const groupsRes = await fetch('/api/groups');
-      if (!groupsRes.ok) {
-        throw new Error('Error al cargar grupos');
-      }
-      const groupsData = await groupsRes.json();
-      setGroups(groupsData);
-
-      // 3. Fetch detailed balances for all groups
-      let owed = 0;
-      let owe = 0;
-
-      await Promise.all(
-        groupsData.map(async (grp: Group) => {
-          const detailRes = await fetch(`/api/groups/${grp.id}`);
-          if (detailRes.ok) {
-            const { members, expenses } = await detailRes.json();
-            const memberIds = members.map((m: { id: string }) => m.id);
-            const { balances } = calculateBalances(memberIds, expenses);
-            
-            const myNet = balances[userData.id] || 0;
-            if (myNet > 0) {
-              owed += myNet;
-            } else if (myNet < 0) {
-              owe += Math.abs(myNet);
-            }
-          }
-        })
-      );
-
-      setTotalOwedToMe(owed);
-      setTotalIOwe(owe);
-    } catch (e) {
-      console.error(e);
-      showToast('Error de conexión al cargar datos.');
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
-
+export default function LandingPage() {
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    // 1. Initial Hero Animations
+    const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+    
+    tl.from('.landing-header', {
+      y: -50,
+      opacity: 0,
+      duration: 1,
+    })
+    .from('.hero-badge', {
+      y: 20,
+      opacity: 0,
+      duration: 0.8,
+    }, '-=0.6')
+    .from('.hero-title', {
+      y: 30,
+      opacity: 0,
+      duration: 1,
+    }, '-=0.6')
+    .from('.hero-desc', {
+      y: 30,
+      opacity: 0,
+      duration: 1,
+    }, '-=0.8')
+    .from('.cta-group', {
+      y: 30,
+      opacity: 0,
+      duration: 1,
+    }, '-=0.8')
+    .from('.floating-app-btn', {
+      scale: 0,
+      opacity: 0,
+      duration: 0.6,
+      ease: 'back.out(1.7)',
+    }, '-=0.4');
 
-  useEffect(() => {
-    if (user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEditUsername(user.username);
-      setEditEmail(user.email);
-      setEditAvatarColor(user.avatarColor);
-      setEditPassword('');
-    }
-  }, [user, isProfileModalOpen]);
+    // 2. Scroll-Triggered Feature Card Animations
+    gsap.from('.feature-card', {
+      scrollTrigger: {
+        trigger: '.features-grid',
+        start: 'top 80%',
+      },
+      y: 50,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.2,
+      ease: 'power3.out',
+    });
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProfileLoading(true);
-    try {
-      const res = await fetch('/api/auth/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: editUsername,
-          email: editEmail,
-          avatarColor: editAvatarColor,
-          password: editPassword || undefined,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Error al actualizar perfil');
-      }
-
-      showToast('¡Perfil actualizado con éxito!');
-      setIsProfileModalOpen(false);
-      await fetchDashboardData();
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Error al actualizar perfil');
-    } finally {
-      setProfileLoading(false);
-    }
-  };
-
-  const handleToggleArchiveGroup = async (e: React.MouseEvent, group: Group) => {
-    e.stopPropagation();
-    if (!user) return;
-
-    const isArchived = group.archivedBy?.includes(user.id);
-    const updatedArchivedBy = isArchived
-      ? (group.archivedBy || []).filter(id => id !== user.id)
-      : [...(group.archivedBy || []), user.id];
-
-    try {
-      const res = await fetch(`/api/groups/${group.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ archivedBy: updatedArchivedBy }),
-      });
-
-      if (!res.ok) {
-        throw new Error('No se pudo archivar el grupo');
-      }
-
-      showToast(isArchived ? 'Grupo desarchivado.' : 'Grupo archivado.');
-      await fetchDashboardData();
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Error al cambiar archivo del grupo');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.replace('/login');
-      router.refresh();
-    } catch {
-      showToast('Error al cerrar sesión.');
-    }
-  };
-
-  const handleCreateGroup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const finalGroupName = isBonoCreation ? (groupName || 'Mi Bono Cultural Joven') : groupName;
-    if (!finalGroupName) return;
-
-    setActionLoading(true);
-    try {
-      let targetDate: string | undefined = undefined;
-      if (isBonoCreation && bonoActivationDate) {
-        const targetDateObj = new Date(bonoActivationDate + 'T00:00:00');
-        targetDateObj.setFullYear(targetDateObj.getFullYear() + 1);
-        targetDate = targetDateObj.toISOString().split('T')[0];
-      }
-
-      const res = await fetch('/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: finalGroupName,
-          description: isBonoCreation ? (groupDesc || 'Control de saldo de 400€') : groupDesc,
-          isBonoCultural: isBonoCreation,
-          targetDate
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Error al crear grupo');
-      }
-
-      setGroupName('');
-      setGroupDesc('');
-      setIsBonoCreation(false);
-      showToast(isBonoCreation ? '¡Rastreador de Bono Cultural creado!' : '¡Grupo creado con éxito!');
-      await fetchDashboardData();
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Error al crear grupo');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleJoinGroup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteCode) return;
-
-    setActionLoading(true);
-    try {
-      const res = await fetch('/api/groups/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviteCode }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Error al unirse al grupo');
-      }
-
-      setInviteCode('');
-      showToast('¡Te has unido al grupo!');
-      await fetchDashboardData();
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Error al unirse al grupo');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className={styles.dashboard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--accent-primary)' }} />
-      </div>
-    );
-  }
-
-  const userInitial = user?.username ? user.username.charAt(0) : '?';
+    // 3. Scroll-Triggered Banner Animations
+    gsap.from('.cta-banner', {
+      scrollTrigger: {
+        trigger: '.cta-banner',
+        start: 'top 85%',
+      },
+      y: 50,
+      opacity: 0,
+      duration: 0.8,
+      ease: 'power3.out',
+    });
+  }, []);
 
   return (
-    <div className={`${styles.dashboard} animate-fade-in`}>
+    <div className="landing-wrapper">
+
       {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.brand}>
-          <h1 className={styles.brandName}>Div<span>vy</span></h1>
-        </div>
-        <div className={styles.userMenu}>
-          <NotificationCenter />
-          <button
-            onClick={() => setIsProfileModalOpen(true)}
-            title="Editar perfil"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <div className={styles.avatar} style={{ backgroundColor: user?.avatarColor || 'var(--accent-primary)' }}>
-              {userInitial}
-            </div>
-          </button>
-          <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">
-            <LogOut size={20} />
-          </button>
-        </div>
+      <header className="landing-header">
+        <Link href="/" className="nav-logo">
+          <Coins size={28} style={{ color: 'var(--accent-primary)' }} />
+          <span className="logo-text">
+            Div<span>vy</span>
+          </span>
+        </Link>
+        <Link href="/app" className="app-btn-nav">
+          Acceder a la App
+          <ArrowRight size={16} />
+        </Link>
       </header>
 
-      {/* Main Container */}
-      <main className={styles.mainContent}>
-        {/* Welcome */}
-        <section className={styles.welcomeSection}>
-          <h2>Hola, {user?.username}</h2>
-          <p>Lleva el control de tus gastos compartidos de forma clara.</p>
+      {/* Main Content */}
+      <main className="landing-content">
+        {/* Hero Section */}
+        <section className="hero-section">
+          <div className="hero-badge">
+            NUEVA VERSIÓN 1.2 DISPONIBLE 🎉
+          </div>
+          <h1 className="hero-title">
+            Cuentas claras, viajes <span>sin dramas</span>.
+          </h1>
+          <p className="hero-desc">
+            Lleva el control, división y liquidación de tus gastos grupales de viajes, comidas y proyectos. Todo en tiempo real y sin complicaciones.
+          </p>
+          <div className="cta-group">
+            <Link href="/app" className="cta-primary">
+              Comenzar Gratis
+              <ArrowRight size={18} />
+            </Link>
+            <a href="#features" className="cta-secondary">
+              Ver Características
+            </a>
+          </div>
         </section>
 
-        {/* Balance summary */}
-        <section className={styles.balanceBoard}>
-          <div className={styles.balanceCard}>
-            <span className={styles.balanceLabel}>Te deben</span>
-            <span className={`${styles.balanceValue} ${totalOwedToMe > 0 ? styles.positive : ''}`}>
-              {totalOwedToMe.toFixed(2)}€
-            </span>
-          </div>
-          <div className={styles.balanceCard}>
-            <span className={styles.balanceLabel}>Debes</span>
-            <span className={`${styles.balanceValue} ${totalIOwe > 0 ? styles.negative : ''}`}>
-              {totalIOwe.toFixed(2)}€
-            </span>
-          </div>
-        </section>
+        {/* Features Section */}
+        <section id="features" className="features-section">
+          <span className="section-label">Características</span>
+          <h2 className="section-title">Diseñado para la simplicidad</h2>
+          
+          <div className="features-grid">
+            {/* Feature 1 */}
+            <div className="feature-card">
+              <div className="feature-icon-wrapper">
+                <Users size={24} />
+              </div>
+              <h3 className="feature-card-title">Grupos Inteligentes</h3>
+              <p className="feature-card-desc">
+                Crea grupos para tus viajes, cenas o compañeros de piso en un segundo. Invita a otros miembros mediante un código exclusivo.
+              </p>
+            </div>
 
-        {/* Groups */}
-        <section>
-          <div className={styles.sectionTitle}>
-            <span>{showArchived ? 'Grupos Archivados' : 'Mis Grupos'}</span>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button
-                onClick={() => setShowArchived(!showArchived)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--accent-primary)',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <Archive size={14} /> {showArchived ? 'Ver Activos' : 'Ver Archivados'}
-              </button>
-              <Users size={18} style={{ color: 'var(--text-secondary)' }} />
+            {/* Feature 2 */}
+            <div className="feature-card">
+              <div className="feature-icon-wrapper">
+                <PieChart size={24} />
+              </div>
+              <h3 className="feature-card-title">Liquidación Óptima</h3>
+              <p className="feature-card-desc">
+                Nuestro algoritmo calcula quién debe pagar a quién reduciendo el número de transacciones totales. Menos bizums, menos líos.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="feature-card">
+              <div className="feature-icon-wrapper">
+                <Bell size={24} />
+              </div>
+              <h3 className="feature-card-title">Notificaciones PWA</h3>
+              <p className="feature-card-desc">
+                Entérate al instante cuando alguien añada un gasto o liquide una deuda gracias a las notificaciones Push nativas.
+              </p>
             </div>
           </div>
-
-          <div className={styles.groupsGrid}>
-            {groups && (groups.filter(group => showArchived ? group.archivedBy?.includes(user?.id || '') : !group.archivedBy?.includes(user?.id || '')).length > 0) ? (
-              groups
-                .filter(group => showArchived ? group.archivedBy?.includes(user?.id || '') : !group.archivedBy?.includes(user?.id || ''))
-                .map((group) => (
-                  <div
-                    key={group.id}
-                    className={styles.groupCard}
-                    onClick={() => router.push(`/group/${group.id}`)}
-                    style={{ position: 'relative' }}
-                  >
-                    <div className={styles.groupInfo}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span className={styles.groupName}>{group.name}</span>
-                        {group.isBonoCultural && (
-                          <span 
-                            style={{ 
-                              fontSize: '0.62rem', 
-                              backgroundColor: 'rgba(230,175,46,0.12)', 
-                              color: '#D49500', 
-                              border: '1px solid rgba(230,175,46,0.25)', 
-                              padding: '2px 6px', 
-                              borderRadius: '4px', 
-                              fontWeight: 800,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px'
-                            }}
-                          >
-                            🎟️ Bono Cultural
-                          </span>
-                        )}
-                      </div>
-                      {group.description && <span className={styles.groupDesc}>{group.description}</span>}
-                      <div className={styles.groupMeta}>
-                        <span className={styles.memberBadge}>
-                          <Users size={12} /> {group.members.length} {group.members.length === 1 ? 'miembro' : 'miembros'}
-                        </span>
-                        <span>• Cód: {group.inviteCode}</span>
-                      </div>
-                      {group.targetDate && (
-                        <div
-                          style={{
-                            marginTop: '8px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            backgroundColor: 'rgba(200, 122, 83, 0.05)',
-                            border: '1px dashed rgba(200, 122, 83, 0.2)',
-                            borderRadius: 'var(--radius-sm)',
-                            padding: '3px 8px',
-                            fontSize: '0.7rem',
-                            fontWeight: 700,
-                            color: 'var(--accent-primary)',
-                            width: 'fit-content'
-                          }}
-                        >
-                          <span style={{ animation: 'pulseBadge 2s infinite', fontSize: '0.8rem' }}>⏳</span>
-                          <span>{getMiniCountdown(group.targetDate)}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <button
-                        onClick={(e) => handleToggleArchiveGroup(e, group)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          borderRadius: 'var(--radius-sm)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                        title={group.archivedBy?.includes(user?.id || '') ? "Desarchivar grupo" : "Archivar grupo"}
-                      >
-                        <Archive size={16} style={{ color: group.archivedBy?.includes(user?.id || '') ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
-                      </button>
-                      <ChevronRight className={styles.chevron} size={20} />
-                    </div>
-                  </div>
-                ))
-            ) : (
-              <div className={styles.emptyState}>
-                <Users size={32} style={{ color: 'var(--text-muted)' }} />
-                <p>No tienes ningún grupo todavía.</p>
-                <p style={{ fontSize: '0.8rem', marginTop: '-6px' }}>Crea un grupo para tu próximo viaje o cena, o únete a uno existente.</p>
-              </div>
-            )}
-          </div>
         </section>
 
-        {/* Actions panel */}
-        <section className={styles.quickActions}>
-          <div className={styles.actionTabs}>
-            <button
-              className={`${styles.tabBtn} ${activeTab === 'create' ? styles.active : ''}`}
-              onClick={() => setActiveTab('create')}
-            >
-              Nuevo Grupo
-            </button>
-            <button
-              className={`${styles.tabBtn} ${activeTab === 'join' ? styles.active : ''}`}
-              onClick={() => setActiveTab('join')}
-            >
-              Unirse con Código
-            </button>
-          </div>
-
-          {activeTab === 'create' ? (
-            <form onSubmit={handleCreateGroup} className={styles.actionForm}>
-              {/* Type toggle */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsBonoCreation(false);
-                    if (groupName === 'Mi Bono Cultural Joven') setGroupName('');
-                  }}
-                  style={{
-                    padding: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)',
-                    backgroundColor: !isBonoCreation ? 'var(--accent-primary)' : 'var(--bg-secondary)',
-                    color: !isBonoCreation ? '#FFF' : 'var(--text-primary)',
-                    cursor: 'pointer',
-                    transition: 'var(--transition-smooth)'
-                  }}
-                >
-                  Grupo Estándar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsBonoCreation(true);
-                    if (!groupName) setGroupName('Mi Bono Cultural Joven');
-                  }}
-                  style={{
-                    padding: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)',
-                    backgroundColor: isBonoCreation ? 'var(--accent-primary)' : 'var(--bg-secondary)',
-                    color: isBonoCreation ? '#FFF' : 'var(--text-primary)',
-                    cursor: 'pointer',
-                    transition: 'var(--transition-smooth)'
-                  }}
-                >
-                  🎟️ Bono Cultural
-                </button>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="groupName">
-                  {isBonoCreation ? 'Nombre de tu Bono' : 'Nombre del Grupo/Viaje'}
-                </label>
-                <input
-                  id="groupName"
-                  type="text"
-                  placeholder={isBonoCreation ? "Ej. Mi Bono Cultural 2026" : "Ej. Viaje a Japón 2026"}
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  required
-                />
-              </div>
-
-              {isBonoCreation ? (
-                <div className={styles.inputGroup} style={{ animation: 'fadeIn 0.2s ease' }}>
-                  <label htmlFor="bonoActivationDate">Fecha de activación de la tarjeta</label>
-                  <input
-                    id="bonoActivationDate"
-                    type="date"
-                    value={bonoActivationDate}
-                    onChange={(e) => setBonoActivationDate(e.target.value)}
-                    required
-                  />
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.2 }}>
-                    Se usará para calcular exactamente el plazo límite de 12 meses para consumir el saldo.
-                  </span>
-                </div>
-              ) : (
-                <div className={styles.inputGroup}>
-                  <label htmlFor="groupDesc">Descripción (Opcional)</label>
-                  <input
-                    id="groupDesc"
-                    type="text"
-                    placeholder="Ej. Gastos compartidos de las vacaciones"
-                    value={groupDesc}
-                    onChange={(e) => setGroupDesc(e.target.value)}
-                  />
-                </div>
-              )}
-
-              <button type="submit" className={styles.actionSubmitBtn} disabled={actionLoading}>
-                <Plus size={18} />
-                {actionLoading ? 'Creando...' : (isBonoCreation ? 'Crear Rastreador de Bono' : 'Crear Grupo')}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleJoinGroup} className={styles.actionForm}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="inviteCode">Código de Invitación</label>
-                <input
-                  id="inviteCode"
-                  type="text"
-                  placeholder="Ej. A1B2C3D4"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  required
-                />
-              </div>
-              <button type="submit" className={styles.actionSubmitBtn} disabled={actionLoading}>
-                <UserPlus size={18} />
-                {actionLoading ? 'Uniéndose...' : 'Unirse al Grupo'}
-              </button>
-            </form>
-          )}
+        {/* Call to Action Banner */}
+        <section className="cta-banner">
+          <h2 className="banner-title">¿Listo para cuadrar tus cuentas?</h2>
+          <p className="banner-desc">
+            Únete a los miles de usuarios que ya gestionan sus deudas grupales sin discusiones ni hojas de cálculo infinitas.
+          </p>
+          <Link href="/app" className="banner-btn">
+            Empezar ahora gratis
+          </Link>
         </section>
+
+        {/* Reusable Legal Footer */}
+        <div style={{ width: '100%', maxWidth: '800px', paddingBottom: '40px' }}>
+          <Footer />
+        </div>
       </main>
 
-      {/* Profile Edit Modal */}
-      {isProfileModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => setIsProfileModalOpen(false)}
-        >
-          <div
-            style={{
-              width: '90%',
-              maxWidth: '400px',
-              backgroundColor: 'var(--bg-card)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '24px',
-              boxShadow: 'var(--shadow-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Editar Perfil</h2>
-            
-            <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Nombre de Usuario</label>
-                <input
-                  type="text"
-                  value={editUsername}
-                  onChange={(e) => setEditUsername(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', outline: 'none', fontSize: '0.85rem' }}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Correo Electrónico</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', outline: 'none', fontSize: '0.85rem' }}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Nueva Contraseña (Dejar en blanco para mantener)</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={editPassword}
-                  onChange={(e) => setEditPassword(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', outline: 'none', fontSize: '0.85rem' }}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Color de Avatar</label>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                  {['#C87A53', '#4A5D4E', '#5C768D', '#BCA374', '#8A7B9F', '#3A3F47'].map(color => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setEditAvatarColor(color)}
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        backgroundColor: color,
-                        border: editAvatarColor === color ? '2px solid var(--text-primary)' : '2px solid transparent',
-                        cursor: 'pointer',
-                        transform: editAvatarColor === color ? 'scale(1.1)' : 'scale(1)',
-                        transition: 'transform 0.2s ease',
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsProfileModalOpen(false)}
-                  style={{ flex: 1, padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  style={{ flex: 1, padding: '10px', borderRadius: 'var(--radius-sm)', border: 'none', backgroundColor: 'var(--accent-primary)', color: '#FFF', fontWeight: 700, cursor: 'pointer' }}
-                  disabled={profileLoading}
-                >
-                  {profileLoading ? 'Guardando...' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Toast */}
-      {toastMsg && <div className={styles.toast}>{toastMsg}</div>}
+      {/* Floating Action Button (Always Visible) */}
+      <Link href="/app" className="floating-app-btn" title="Ir a la aplicación">
+        Entrar a Divvy
+        <ChevronRight size={18} />
+      </Link>
     </div>
   );
 }

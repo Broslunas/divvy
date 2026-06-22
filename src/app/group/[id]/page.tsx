@@ -496,7 +496,7 @@ export default function GroupDetailPage({ params }: PageProps) {
       <div className="interactive-layout-wrapper">
         {/* Header */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/')} title="Volver al inicio">
+        <button className={styles.backBtn} onClick={() => router.push('/app')} title="Volver al inicio">
           <ArrowLeft size={20} />
         </button>
         <div className={styles.headerInfo}>

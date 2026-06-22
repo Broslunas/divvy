@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [checkAuth, setCheckAuth] = useState(true);
   const [error, setError] = useState('');
 
-  const [redirectTo, setRedirectTo] = useState('/');
+  const [redirectTo, setRedirectTo] = useState('/app');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -29,7 +29,7 @@ export default function LoginPage() {
     fetch('/api/auth/me')
       .then((res) => {
         if (res.ok) {
-          router.replace(redirect || '/');
+          router.replace(redirect || '/app');
         } else {
           setCheckAuth(false);
         }
@@ -124,7 +124,7 @@ export default function LoginPage() {
 
         <div className={styles.footer}>
           ¿No tienes una cuenta?{' '}
-          <Link href={`/register${redirectTo !== '/' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`} className={styles.footerLink}>
+          <Link href={`/register${redirectTo !== '/app' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`} className={styles.footerLink}>
             Regístrate gratis
           </Link>
         </div>

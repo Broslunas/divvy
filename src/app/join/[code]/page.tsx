@@ -211,7 +211,7 @@ export default function JoinGroupPage({ params }: JoinPageProps) {
               {errorMessage}
             </p>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/app')}
               className="btn btn-primary"
               style={{ width: '100%', padding: '10px 14px', fontSize: '0.85rem', marginTop: '8px' }}
             >
