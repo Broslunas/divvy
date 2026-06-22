@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
-import { Users, Plus, Check, ArrowRight, Coins, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, ArrowRight, Coins, RefreshCw } from 'lucide-react';
 
 interface Expense {
   id: string;
@@ -29,9 +28,6 @@ export default function DivvySimulator() {
   const [share, setShare] = useState(90);
   const [balances, setBalances] = useState({ Ana: 0, Pablo: -60, Dani: 60 });
   const [debts, setDebts] = useState<{ from: string; to: string; amount: number }[]>([]);
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  const coinsContainerRef = useRef<HTMLDivElement>(null);
 
   // Recalculate anytime expenses check state changes
   useEffect(() => {
@@ -62,7 +58,7 @@ export default function DivvySimulator() {
       let maxDebt = 0;
       let maxCredit = 0;
 
-      participants.forEach((p) => {
+      for (const p of participants) {
         if (tempBalances[p] < -0.01 && tempBalances[p] < maxDebt) {
           maxDebt = tempBalances[p];
           debtor = p;
@@ -71,7 +67,7 @@ export default function DivvySimulator() {
           maxCredit = tempBalances[p];
           creditor = p;
         }
-      });
+      }
 
       if (!debtor || !creditor) break;
 
@@ -103,105 +99,13 @@ export default function DivvySimulator() {
   const runSimulation = () => {
     if (isSimulating || debts.length === 0) return;
     setIsSimulating(true);
+    setSimulationDone(false);
 
-    const timeline = gsap.timeline({
-      onComplete: () => {
-        setIsSimulating(false);
-        setSimulationDone(true);
-      },
-    });
-
-    // Clear any previous animated coins
-    if (coinsContainerRef.current) {
-      coinsContainerRef.current.innerHTML = '';
-    }
-
-    // 1. Highlight the debtor avatars
-    timeline.to('.sim-avatar-debtor', {
-      scale: 1.05,
-      boxShadow: '0 0 20px rgba(176, 90, 90, 0.4)',
-      duration: 0.3,
-      stagger: 0.1,
-    });
-
-    // 2. Animate flowing coins/bills between friends based on calculated debts
-    debts.forEach((debt) => {
-      const fromEl = containerRef.current?.querySelector(`[data-name="${debt.from}"]`);
-      const toEl = containerRef.current?.querySelector(`[data-name="${debt.to}"]`);
-      const containerEl = coinsContainerRef.current;
-
-      if (fromEl && toEl && containerEl) {
-        const fromRect = fromEl.getBoundingClientRect();
-        const toRect = toEl.getBoundingClientRect();
-        const containerRect = containerEl.getBoundingClientRect();
-
-        // Calculate positions relative to the simulator container
-        const startX = fromRect.left - containerRect.left + fromRect.width / 2;
-        const startY = fromRect.top - containerRect.top + fromRect.height / 2;
-        const endX = toRect.left - containerRect.left + toRect.width / 2;
-        const endY = toRect.top - containerRect.top + toRect.height / 2;
-
-        // Create 3 animated coin elements per transfer path for a richer effect
-        for (let i = 0; i < 3; i++) {
-          const coin = document.createElement('div');
-          coin.className = 'sim-animated-coin';
-          coin.innerHTML = '€';
-          containerEl.appendChild(coin);
-
-          // Set starting position
-          gsap.set(coin, {
-            x: startX - 12,
-            y: startY - 12,
-            opacity: 0,
-            scale: 0.5,
-          });
-
-          // Animate coin
-          timeline.to(coin, {
-            opacity: 1,
-            scale: 1,
-            x: startX + (Math.random() - 0.5) * 20 - 12,
-            y: startY + (Math.random() - 0.5) * 20 - 12,
-            duration: 0.2,
-            delay: i * 0.1,
-          }, '+=0')
-          .to(coin, {
-            x: endX - 12,
-            y: endY - 12,
-            duration: 0.8,
-            ease: 'power2.inOut',
-          })
-          .to(coin, {
-            opacity: 0,
-            scale: 0.2,
-            duration: 0.2,
-          });
-        }
-      }
-    });
-
-    // 3. Highlight the creditor avatars and reset scale
-    timeline.to('.sim-avatar-creditor', {
-      scale: 1.05,
-      boxShadow: '0 0 20px rgba(45, 106, 79, 0.4)',
-      duration: 0.3,
-    }, '-=0.3')
-    .to('.simulator-friend-card', {
-      scale: 1,
-      boxShadow: 'none',
-      duration: 0.3,
-    });
-
-    // 4. Fade in the results banner
-    timeline.fromTo('.sim-results-banner', {
-      y: 20,
-      opacity: 0,
-    }, {
-      y: 0,
-      opacity: 1,
-      duration: 0.5,
-      ease: 'back.out(1.5)',
-    }, '-=0.2');
+    // Simulate calculations with a fast timeout (600ms) for high-performance feel
+    setTimeout(() => {
+      setIsSimulating(false);
+      setSimulationDone(true);
+    }, 600);
   };
 
   const getFriendColorClass = (name: string) => {
@@ -224,7 +128,7 @@ export default function DivvySimulator() {
   };
 
   return (
-    <div ref={containerRef} className="simulator-card animate-fade-in">
+    <div className="simulator-card animate-fade-in">
       <div className="simulator-header">
         <div className="simulator-header-icon">
           <Coins size={20} />
@@ -292,7 +196,7 @@ export default function DivvySimulator() {
                   key={name}
                   data-name={name}
                   className={`simulator-friend-card ${
-                    isDebtor ? 'sim-avatar-debtor-card' : isCreditor ? 'sim-avatar-creditor-card' : ''
+                    simulationDone && isDebtor ? 'sim-avatar-debtor-card' : simulationDone && isCreditor ? 'sim-avatar-creditor-card' : ''
                   }`}
                 >
                   <div className={`simulator-friend-avatar ${getFriendColorClass(name)}`}>
@@ -337,12 +241,9 @@ export default function DivvySimulator() {
         </div>
       </div>
 
-      {/* Floating Animated Coins Container */}
-      <div ref={coinsContainerRef} className="sim-coins-layer" />
-
       {/* Simplified Debts Results Banner */}
       {simulationDone && debts.length > 0 && (
-        <div className="sim-results-banner">
+        <div className="sim-results-banner animate-slide-up">
           <span className="results-badge">Cuentas Divididas y Simplificadas</span>
           <p className="results-desc">
             En lugar de realizar múltiples transacciones, Divvy reduce las transferencias al mínimo absoluto:

@@ -457,7 +457,21 @@
   align-items: center;
   text-align: center;
   position: relative;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sim-avatar-debtor-card {
+  border-color: rgba(176, 90, 90, 0.4) !important;
+  background-color: rgba(176, 90, 90, 0.03) !important;
+  box-shadow: 0 4px 14px rgba(176, 90, 90, 0.06) !important;
+  transform: scale(1.03);
+}
+
+.sim-avatar-creditor-card {
+  border-color: rgba(45, 106, 79, 0.4) !important;
+  background-color: rgba(45, 106, 79, 0.03) !important;
+  box-shadow: 0 4px 14px rgba(45, 106, 79, 0.06) !important;
+  transform: scale(1.03);
 }
 
 .simulator-friend-avatar {
@@ -579,36 +593,7 @@
   border: 1px solid rgba(45, 106, 79, 0.1);
 }
 
-/* Floating animated coins layer */
-.sim-coins-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 50;
-  overflow: hidden;
-}
-
-.sim-animated-coin {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #F9D976 0%, #E9B646 100%);
-  color: #7A530E;
-  border: 1px solid #DF9C20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.68rem;
-  font-weight: 800;
-  box-shadow: 0 4px 10px rgba(223, 156, 32, 0.4);
-  z-index: 100;
-}
-
-/* Results Banner */
+/* Results Banner and slide up CSS animation */
 .sim-results-banner {
   margin-top: 32px;
   background-color: rgba(45, 106, 79, 0.05);
@@ -616,6 +601,21 @@
   border-radius: var(--radius-md);
   padding: 24px;
   text-align: left;
+}
+
+.animate-slide-up {
+  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .results-badge {
