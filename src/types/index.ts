@@ -24,6 +24,7 @@ export interface Group {
   currency?: string; // 'EUR' | 'USD' | 'GBP' | 'JPY' | 'MXN'
   notes?: string; // Travel notes, itinerary, packing list
   targetDate?: string; // Target date of the event/trip (e.g. YYYY-MM-DD)
+  isBonoCultural?: boolean; // Flag to identify a Bono Cultural tracker group
   createdAt: string;
 }
 
@@ -66,5 +67,6 @@ export interface Expense {
   tags?: string[];
   paymentMethod?: string; // 'cash' | 'card' | 'bizum' | 'paypal'
   items?: ItemizedBillItem[]; // Desglose por productos/artículos
+  ticketUploaded?: boolean; // Flag for Spain's Bono Cultural ticket justification status
   createdAt: string;
 }

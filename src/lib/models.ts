@@ -33,6 +33,7 @@ const GroupSchema = new mongoose.Schema({
   currency: { type: String, default: 'EUR' },
   notes: { type: String, default: '' },
   targetDate: { type: String },
+  isBonoCultural: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
@@ -45,6 +46,7 @@ const GroupSchema = new mongoose.Schema({
       ret.currency = ret.currency || 'EUR';
       ret.notes = ret.notes || '';
       ret.targetDate = ret.targetDate || undefined;
+      ret.isBonoCultural = !!ret.isBonoCultural;
       delete ret._id;
       delete ret.__v;
     }
@@ -86,6 +88,7 @@ const ExpenseSchema = new mongoose.Schema({
   tags: [{ type: String }],
   paymentMethod: { type: String, default: 'cash' },
   items: [ItemizedBillItemSchema],
+  ticketUploaded: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
@@ -103,11 +106,12 @@ const ExpenseSchema = new mongoose.Schema({
         splitType: it.splitType || 'equal',
         splitValues: it.splitValues
           ? Object.fromEntries(
-              Object.entries(it.splitValues).map(([k, v]) => [k, String(v)]),
+               Object.entries(it.splitValues).map(([k, v]) => [k, String(v)]),
             )
           : undefined,
       }));
       ret.multiPayers = ret.multiPayers || [];
+      ret.ticketUploaded = !!ret.ticketUploaded;
       delete ret._id;
       delete ret.__v;
     }

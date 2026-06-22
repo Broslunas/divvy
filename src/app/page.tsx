@@ -53,6 +53,8 @@ export default function Dashboard() {
   const [groupName, setGroupName] = useState('');
   const [groupDesc, setGroupDesc] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [isBonoCreation, setIsBonoCreation] = useState(false);
+  const [bonoActivationDate, setBonoActivationDate] = useState(new Date().toISOString().split('T')[0]);
   const [actionLoading, setActionLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
@@ -207,14 +209,27 @@ export default function Dashboard() {
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!groupName) return;
+    const finalGroupName = isBonoCreation ? (groupName || 'Mi Bono Cultural Joven') : groupName;
+    if (!finalGroupName) return;
 
     setActionLoading(true);
     try {
+      let targetDate: string | undefined = undefined;
+      if (isBonoCreation && bonoActivationDate) {
+        const targetDateObj = new Date(bonoActivationDate + 'T00:00:00');
+        targetDateObj.setFullYear(targetDateObj.getFullYear() + 1);
+        targetDate = targetDateObj.toISOString().split('T')[0];
+      }
+
       const res = await fetch('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: groupName, description: groupDesc }),
+        body: JSON.stringify({
+          name: finalGroupName,
+          description: isBonoCreation ? (groupDesc || 'Control de saldo de 400€') : groupDesc,
+          isBonoCultural: isBonoCreation,
+          targetDate
+        }),
       });
 
       if (!res.ok) {
@@ -224,7 +239,8 @@ export default function Dashboard() {
 
       setGroupName('');
       setGroupDesc('');
-      showToast('¡Grupo creado con éxito!');
+      setIsBonoCreation(false);
+      showToast(isBonoCreation ? '¡Rastreador de Bono Cultural creado!' : '¡Grupo creado con éxito!');
       await fetchDashboardData();
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error al crear grupo');
@@ -362,7 +378,26 @@ export default function Dashboard() {
                     style={{ position: 'relative' }}
                   >
                     <div className={styles.groupInfo}>
-                      <span className={styles.groupName}>{group.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span className={styles.groupName}>{group.name}</span>
+                        {group.isBonoCultural && (
+                          <span 
+                            style={{ 
+                              fontSize: '0.62rem', 
+                              backgroundColor: 'rgba(230,175,46,0.12)', 
+                              color: '#D49500', 
+                              border: '1px solid rgba(230,175,46,0.25)', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px', 
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}
+                          >
+                            🎟️ Bono Cultural
+                          </span>
+                        )}
+                      </div>
                       {group.description && <span className={styles.groupDesc}>{group.description}</span>}
                       <div className={styles.groupMeta}>
                         <span className={styles.memberBadge}>
@@ -443,30 +478,94 @@ export default function Dashboard() {
 
           {activeTab === 'create' ? (
             <form onSubmit={handleCreateGroup} className={styles.actionForm}>
+              {/* Type toggle */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBonoCreation(false);
+                    if (groupName === 'Mi Bono Cultural Joven') setGroupName('');
+                  }}
+                  style={{
+                    padding: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    backgroundColor: !isBonoCreation ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                    color: !isBonoCreation ? '#FFF' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  Grupo Estándar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBonoCreation(true);
+                    if (!groupName) setGroupName('Mi Bono Cultural Joven');
+                  }}
+                  style={{
+                    padding: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    backgroundColor: isBonoCreation ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                    color: isBonoCreation ? '#FFF' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  🎟️ Bono Cultural
+                </button>
+              </div>
+
               <div className={styles.inputGroup}>
-                <label htmlFor="groupName">Nombre del Grupo/Viaje</label>
+                <label htmlFor="groupName">
+                  {isBonoCreation ? 'Nombre de tu Bono' : 'Nombre del Grupo/Viaje'}
+                </label>
                 <input
                   id="groupName"
                   type="text"
-                  placeholder="Ej. Viaje a Japón 2026"
+                  placeholder={isBonoCreation ? "Ej. Mi Bono Cultural 2026" : "Ej. Viaje a Japón 2026"}
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   required
                 />
               </div>
-              <div className={styles.inputGroup}>
-                <label htmlFor="groupDesc">Descripción (Opcional)</label>
-                <input
-                  id="groupDesc"
-                  type="text"
-                  placeholder="Ej. Gastos compartidos de las vacaciones"
-                  value={groupDesc}
-                  onChange={(e) => setGroupDesc(e.target.value)}
-                />
-              </div>
+
+              {isBonoCreation ? (
+                <div className={styles.inputGroup} style={{ animation: 'fadeIn 0.2s ease' }}>
+                  <label htmlFor="bonoActivationDate">Fecha de activación de la tarjeta</label>
+                  <input
+                    id="bonoActivationDate"
+                    type="date"
+                    value={bonoActivationDate}
+                    onChange={(e) => setBonoActivationDate(e.target.value)}
+                    required
+                  />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.2 }}>
+                    Se usará para calcular exactamente el plazo límite de 12 meses para consumir el saldo.
+                  </span>
+                </div>
+              ) : (
+                <div className={styles.inputGroup}>
+                  <label htmlFor="groupDesc">Descripción (Opcional)</label>
+                  <input
+                    id="groupDesc"
+                    type="text"
+                    placeholder="Ej. Gastos compartidos de las vacaciones"
+                    value={groupDesc}
+                    onChange={(e) => setGroupDesc(e.target.value)}
+                  />
+                </div>
+              )}
+
               <button type="submit" className={styles.actionSubmitBtn} disabled={actionLoading}>
                 <Plus size={18} />
-                {actionLoading ? 'Creando...' : 'Crear Grupo'}
+                {actionLoading ? 'Creando...' : (isBonoCreation ? 'Crear Rastreador de Bono' : 'Crear Grupo')}
               </button>
             </form>
           ) : (

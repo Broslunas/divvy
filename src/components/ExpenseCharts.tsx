@@ -15,6 +15,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   Supermercado: '#BCA374', // Gold/Brass
   Entretenimiento: '#8A7B9F', // Lavender/Plum
   Otros: '#8E8D8A', // Warm Gray
+  'Artes en vivo, patrimonio y audiovisual': '#8A7B9F', // Plum/Violet
+  'Soporte físico': '#BCA374', // Gold/Brass
+  'Consumo digital': '#5C768D', // Muted Blue
 };
 
 export default function ExpenseCharts({ members, expenses }: ExpenseChartsProps) {

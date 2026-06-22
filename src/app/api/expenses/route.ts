@@ -33,6 +33,7 @@ interface RawPayload {
   tags?: unknown;
   paymentMethod?: unknown;
   items?: unknown;
+  ticketUploaded?: unknown;
 }
 
 function calculateSplitAmount(expense: any, splitUserId: string, groupMembers: string[]): number {
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
     const {
       groupId, title, amount, date, category, paidById,
       multiPayers, splitType, splits, isSettlement,
-      notes, tags, paymentMethod, items,
+      notes, tags, paymentMethod, items, ticketUploaded,
     } = body;
 
     if (!groupId || !title || amount === undefined || !date || !category || !paidById || !splitType || !splits) {
@@ -136,6 +137,7 @@ export async function POST(request: Request) {
       tags: normalisedTags && normalisedTags.length > 0 ? normalisedTags : undefined,
       paymentMethod: paymentMethod ? String(paymentMethod) : undefined,
       items: normalisedItems && normalisedItems.length > 0 ? normalisedItems : undefined,
+      ticketUploaded: !!ticketUploaded,
     });
 
     // Notify group members asynchronously in background (Push, In-App and Email)

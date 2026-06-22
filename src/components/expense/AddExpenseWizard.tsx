@@ -19,6 +19,7 @@ interface AddExpenseWizardProps {
   currentUserId: string;
   currency?: string;
   onAddExpense: (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => Promise<void>;
+  isBonoCultural?: boolean;
 }
 
 interface ScannedExpenseData {
@@ -47,6 +48,7 @@ export default function AddExpenseWizard({
   currentUserId,
   currency,
   onAddExpense,
+  isBonoCultural,
 }: AddExpenseWizardProps) {
   // --- Wizard navigation ---
   const [currentStep, setCurrentStep] = useState(1);
@@ -59,7 +61,7 @@ export default function AddExpenseWizard({
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [category, setCategory] = useState('Comida');
+  const [category, setCategory] = useState(isBonoCultural ? 'Artes en vivo, patrimonio y audiovisual' : 'Comida');
   const [notes, setNotes] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -105,6 +107,12 @@ export default function AddExpenseWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, members, splitType]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setCategory(isBonoCultural ? 'Artes en vivo, patrimonio y audiovisual' : 'Comida');
+    }
+  }, [isOpen, isBonoCultural]);
+
   // Sync primary payer amount
   useEffect(() => {
     if (!isMultiPayer && members.length > 0) {
@@ -126,7 +134,7 @@ export default function AddExpenseWizard({
     setTitle('');
     setAmount('');
     setDate(new Date().toISOString().split('T')[0]);
-    setCategory('Comida');
+    setCategory(isBonoCultural ? 'Artes en vivo, patrimonio y audiovisual' : 'Comida');
     setNotes('');
     setTagsInput('');
     setPaymentMethod('cash');
@@ -134,7 +142,7 @@ export default function AddExpenseWizard({
     setPaidById(currentUserId);
     setSplitType('equal');
     setItemizedItems([]);
-  }, [currentUserId]);
+  }, [currentUserId, isBonoCultural]);
 
   // --- Close handler ---
   const handleClose = useCallback(() => {
@@ -410,11 +418,11 @@ export default function AddExpenseWizard({
 
           {/* Sub-widget modes */}
           {!success && activeMode === 'scan' && (
-            <ReceiptScanner onScanComplete={handleScanComplete} onClose={() => setActiveMode('wizard')} />
+            <ReceiptScanner onScanComplete={handleScanComplete} onClose={() => setActiveMode('wizard')} isBonoCultural={isBonoCultural} />
           )}
 
           {!success && activeMode === 'ai' && (
-            <AIInputParser members={members} currentUserId={currentUserId} onParseComplete={handleAIParseComplete} />
+            <AIInputParser members={members} currentUserId={currentUserId} onParseComplete={handleAIParseComplete} isBonoCultural={isBonoCultural} />
           )}
 
           {!success && activeMode === 'itemized' && (
@@ -457,6 +465,7 @@ export default function AddExpenseWizard({
                   currencySymbol={currencySymbol}
                   onOpenScan={() => setActiveMode('scan')}
                   onOpenAI={() => setActiveMode('ai')}
+                  isBonoCultural={isBonoCultural}
                 />
               )}
 

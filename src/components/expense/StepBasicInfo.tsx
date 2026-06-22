@@ -24,6 +24,7 @@ interface StepBasicInfoProps {
   currencySymbol: string;
   onOpenScan: () => void;
   onOpenAI: () => void;
+  isBonoCultural?: boolean;
 }
 
 export default function StepBasicInfo({
@@ -44,6 +45,7 @@ export default function StepBasicInfo({
   currencySymbol,
   onOpenScan,
   onOpenAI,
+  isBonoCultural,
 }: StepBasicInfoProps) {
   const [showMore, setShowMore] = useState(false);
 
@@ -107,16 +109,16 @@ export default function StepBasicInfo({
           className={styles.fieldInput}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ej. Cena, Gasolina..."
+          placeholder={isBonoCultural ? "Ej. Entradas cine, Novela de misterio..." : "Ej. Cena, Gasolina..."}
           autoComplete="off"
         />
       </div>
 
       {/* Quick Templates */}
-      <QuickTemplates currencySymbol={currencySymbol} onSelect={handleTemplateSelect} />
+      {!isBonoCultural && <QuickTemplates currencySymbol={currencySymbol} onSelect={handleTemplateSelect} />}
 
       {/* Category Picker */}
-      <CategoryPicker selected={category} onSelect={setCategory} />
+      <CategoryPicker selected={category} onSelect={setCategory} isBonoCultural={isBonoCultural} />
 
       {/* Expandable "More Options" */}
       <button

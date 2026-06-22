@@ -7,7 +7,7 @@ import {
   ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle,
   Search, SlidersHorizontal, FileSpreadsheet,
   Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
-  ChevronRight,
+  ChevronRight, Music, BookOpen, Laptop,
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import DebtSettlement from '@/components/DebtSettlement';
@@ -17,6 +17,7 @@ import BudgetProgress from '@/components/BudgetProgress';
 import PwaPrompt from '@/components/PwaPrompt';
 import NotificationCenter from '@/components/NotificationCenter';
 import CountdownWidget from '@/components/CountdownWidget';
+import BonoCulturalHub from '@/components/BonoCulturalHub';
 import type { Group, Expense, User } from '@/types';
 import styles from './group.module.css';
 
@@ -27,6 +28,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   Supermercado: '#BCA374', // Gold/Brass
   Entretenimiento: '#8A7B9F', // Lavender/Plum
   Otros: '#8E8D8A', // Warm Gray
+  'Artes en vivo, patrimonio y audiovisual': '#8A7B9F', // Plum/Violet
+  'Soporte físico': '#BCA374', // Gold/Brass
+  'Consumo digital': '#5C768D', // Muted Blue
 };
 
 const getCurrencySymbol = (code?: string) => {
@@ -54,7 +58,7 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'gastos' | 'liquidar' | 'stats' | 'notas' | 'config'>('gastos');
+  const [activeTab, setActiveTab] = useState<'bono' | 'gastos' | 'liquidar' | 'stats' | 'notas' | 'config'>('gastos');
 
   // Settings tab form states
   const [settingsName, setSettingsName] = useState('');
@@ -105,6 +109,11 @@ export default function GroupDetailPage({ params }: PageProps) {
       setGroup(data.group);
       setMembers(data.members);
       setExpenses(data.expenses);
+
+      if (data.group.isBonoCultural) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveTab('bono');
+      }
 
       // Update config/settings form values
       setSettingsName(data.group.name || '');
@@ -168,6 +177,23 @@ export default function GroupDetailPage({ params }: PageProps) {
       await fetchGroupDetails();
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Error al guardar las notas');
+    }
+  };
+
+  const handleToggleTicketUploaded = async (expenseId: string, currentVal: boolean) => {
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: expenseId, ticketUploaded: currentVal }),
+      });
+      if (!res.ok) {
+        throw new Error('Error al actualizar el estado del ticket.');
+      }
+      await fetchGroupDetails();
+      showToast(currentVal ? '¡Ticket marcado como justificado!' : '¡Ticket marcado como pendiente!');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al actualizar ticket');
     }
   };
 
@@ -367,6 +393,9 @@ export default function GroupDetailPage({ params }: PageProps) {
       case 'Alojamiento': return <Home {...props} />;
       case 'Supermercado': return <ShoppingBag {...props} />;
       case 'Entretenimiento': return <Ticket {...props} />;
+      case 'Artes en vivo, patrimonio y audiovisual': return <Music {...props} />;
+      case 'Soporte físico': return <BookOpen {...props} />;
+      case 'Consumo digital': return <Laptop {...props} />;
       default: return <Package {...props} />;
     }
   };
@@ -483,14 +512,14 @@ export default function GroupDetailPage({ params }: PageProps) {
       <main className={styles.mainContent}>
         
         {/* Countdown Widget */}
-        {group.targetDate ? (
+        {group.targetDate && !group.isBonoCultural ? (
           <section style={{ marginBottom: '20px' }}>
             <CountdownWidget targetDate={group.targetDate} groupName={group.name} />
           </section>
         ) : null}
 
         {/* Budget Progress Bar */}
-        {group.budget && group.budget > 0 ? (
+        {group.budget && group.budget > 0 && !group.isBonoCultural ? (
           <section style={{ marginBottom: '20px' }}>
             <BudgetProgress
               totalSpent={totalSpent}
@@ -502,23 +531,43 @@ export default function GroupDetailPage({ params }: PageProps) {
         ) : null}
 
         {/* Tabs */}
-        <div className={styles.tabs} style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        <div 
+          className={styles.tabs} 
+          style={{ gridTemplateColumns: group.isBonoCultural ? 'repeat(4, 1fr)' : 'repeat(5, 1fr)' }}
+        >
+          {group.isBonoCultural && (
+            <button className={`${styles.tabBtn} ${activeTab === 'bono' ? styles.active : ''}`} onClick={() => setActiveTab('bono')}>
+              Bono
+            </button>
+          )}
           <button className={`${styles.tabBtn} ${activeTab === 'gastos' ? styles.active : ''}`} onClick={() => setActiveTab('gastos')}>
             Gastos
           </button>
-          <button className={`${styles.tabBtn} ${activeTab === 'liquidar' ? styles.active : ''}`} onClick={() => setActiveTab('liquidar')}>
-            Cuentas
-          </button>
+          {!group.isBonoCultural && (
+            <button className={`${styles.tabBtn} ${activeTab === 'liquidar' ? styles.active : ''}`} onClick={() => setActiveTab('liquidar')}>
+              Cuentas
+            </button>
+          )}
           <button className={`${styles.tabBtn} ${activeTab === 'stats' ? styles.active : ''}`} onClick={() => setActiveTab('stats')}>
             Gráficos
           </button>
-          <button className={`${styles.tabBtn} ${activeTab === 'notas' ? styles.active : ''}`} onClick={() => setActiveTab('notas')}>
-            Notas
-          </button>
+          {!group.isBonoCultural && (
+            <button className={`${styles.tabBtn} ${activeTab === 'notas' ? styles.active : ''}`} onClick={() => setActiveTab('notas')}>
+              Notas
+            </button>
+          )}
           <button className={`${styles.tabBtn} ${activeTab === 'config' ? styles.active : ''}`} onClick={() => setActiveTab('config')}>
             Ajustes
           </button>
         </div>
+
+        {activeTab === 'bono' && group.isBonoCultural && (
+          <BonoCulturalHub 
+            group={group} 
+            expenses={expenses} 
+            onToggleJustified={handleToggleTicketUploaded} 
+          />
+        )}
 
         {activeTab === 'gastos' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -720,12 +769,20 @@ export default function GroupDetailPage({ params }: PageProps) {
                               </span>
 
                               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px', flexWrap: 'wrap' }}>
-                                {expense.isSettlement ? (
-                                  <span className={styles.settlementBadge}>Liquidación</span>
-                                ) : isExpenseFullySettled ? (
-                                  <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}>Saldado</span>
+                                {group.isBonoCultural ? (
+                                  expense.ticketUploaded ? (
+                                    <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}>Ticket Justificado</span>
+                                  ) : (
+                                    <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--danger-light)', color: 'var(--danger)' }}>Ticket Pendiente</span>
+                                  )
                                 ) : (
-                                  <span className={styles.settlementBadge} style={{ backgroundColor: '#FDF5E6', color: '#D48C45' }}>Pendiente</span>
+                                  expense.isSettlement ? (
+                                    <span className={styles.settlementBadge}>Liquidación</span>
+                                  ) : isExpenseFullySettled ? (
+                                    <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}>Saldado</span>
+                                  ) : (
+                                    <span className={styles.settlementBadge} style={{ backgroundColor: '#FDF5E6', color: '#D48C45' }}>Pendiente</span>
+                                  )
                                 )}
 
                                 {expense.paymentMethod && expense.paymentMethod !== 'cash' && (
@@ -881,45 +938,52 @@ export default function GroupDetailPage({ params }: PageProps) {
               </div>
 
               {/* Budget Limit Config */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input
-                    type="checkbox"
-                    id="enableBudget"
-                    checked={settingsHasBudget}
-                    onChange={(e) => {
-                      setSettingsHasBudget(e.target.checked);
-                      if (!e.target.checked) setSettingsBudget('');
-                    }}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent-primary)' }}
-                  />
-                  <label htmlFor="enableBudget" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer' }}>
-                    Establecer límite de presupuesto
-                  </label>
-                </div>
-
-                {settingsHasBudget && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', animation: 'fadeIn 0.2s ease', marginLeft: '28px' }}>
-                    <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Presupuesto límite</label>
-                    <div style={{ position: 'relative', maxWidth: '200px' }}>
-                      <input
-                        type="text"
-                        placeholder="Ej. 1000"
-                        value={settingsBudget}
-                        onChange={(e) => {
-                          if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) {
-                            setSettingsBudget(e.target.value);
-                          }
-                        }}
-                        style={{ width: '100%', padding: '10px 12px 10px 24px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-primary)', fontWeight: 700 }}
-                      />
-                      <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                        {getCurrencySymbol(settingsCurrency)}
-                      </span>
-                    </div>
+              {!group.isBonoCultural ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="checkbox"
+                      id="enableBudget"
+                      checked={settingsHasBudget}
+                      onChange={(e) => {
+                        setSettingsHasBudget(e.target.checked);
+                        if (!e.target.checked) setSettingsBudget('');
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent-primary)' }}
+                    />
+                    <label htmlFor="enableBudget" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                      Establecer límite de presupuesto
+                    </label>
                   </div>
-                )}
-              </div>
+
+                  {settingsHasBudget && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', animation: 'fadeIn 0.2s ease', marginLeft: '28px' }}>
+                      <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Presupuesto límite</label>
+                      <div style={{ position: 'relative', maxWidth: '200px' }}>
+                        <input
+                          type="text"
+                          placeholder="Ej. 1000"
+                          value={settingsBudget}
+                          onChange={(e) => {
+                            if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) {
+                              setSettingsBudget(e.target.value);
+                            }
+                          }}
+                          style={{ width: '100%', padding: '10px 12px 10px 24px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.85rem', outline: 'none', backgroundColor: 'var(--bg-primary)', fontWeight: 700 }}
+                        />
+                        <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                          {getCurrencySymbol(settingsCurrency)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Presupuesto del Bono</span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Fijado automáticamente en 400.00€ con límites específicos de categorías.</span>
+                </div>
+              )}
 
               {/* Save Button */}
               <button
@@ -986,6 +1050,7 @@ export default function GroupDetailPage({ params }: PageProps) {
           currentUserId={currentUser.id}
           currency={group?.currency}
           onAddExpense={handleAddExpense}
+          isBonoCultural={group?.isBonoCultural}
         />
       )}
 

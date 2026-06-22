@@ -10,6 +10,9 @@ import {
   Heart,
   Wrench,
   MoreHorizontal,
+  Ticket,
+  BookOpen,
+  Laptop,
   type LucideIcon,
 } from 'lucide-react';
 import styles from './expense.module.css';
@@ -17,6 +20,7 @@ import styles from './expense.module.css';
 interface CategoryPickerProps {
   selected: string;
   onSelect: (category: string) => void;
+  isBonoCultural?: boolean;
 }
 
 interface CategoryItem {
@@ -25,7 +29,7 @@ interface CategoryItem {
   icon: LucideIcon;
 }
 
-const categories: CategoryItem[] = [
+const standardCategories: CategoryItem[] = [
   { key: 'Comida', label: 'Comida', icon: UtensilsCrossed },
   { key: 'Transporte', label: 'Transporte', icon: Car },
   { key: 'Alojamiento', label: 'Alojamiento', icon: Hotel },
@@ -37,10 +41,21 @@ const categories: CategoryItem[] = [
   { key: 'Otros', label: 'Otros', icon: MoreHorizontal },
 ];
 
-export default function CategoryPicker({ selected, onSelect }: CategoryPickerProps) {
+const bonoCategories: CategoryItem[] = [
+  { key: 'Artes en vivo, patrimonio y audiovisual', label: 'Artes en vivo', icon: Ticket },
+  { key: 'Soporte físico', label: 'Soporte físico', icon: BookOpen },
+  { key: 'Consumo digital', label: 'Consumo digital', icon: Laptop },
+];
+
+export default function CategoryPicker({ selected, onSelect, isBonoCultural }: CategoryPickerProps) {
+  const categoriesList = isBonoCultural ? bonoCategories : standardCategories;
+
   return (
-    <div className={styles.categoryGrid}>
-      {categories.map(({ key, label, icon: Icon }) => {
+    <div 
+      className={styles.categoryGrid}
+      style={isBonoCultural ? { gridTemplateColumns: 'repeat(3, 1fr)' } : undefined}
+    >
+      {categoriesList.map(({ key, label, icon: Icon }) => {
         const isActive = selected === key;
         const cardClass = isActive
           ? `${styles.categoryCard} ${styles.selected}`
@@ -53,9 +68,10 @@ export default function CategoryPicker({ selected, onSelect }: CategoryPickerPro
             className={cardClass}
             onClick={() => onSelect(key)}
             aria-pressed={isActive}
+            style={isBonoCultural ? { padding: '12px 6px', gap: '6px' } : undefined}
           >
-            <Icon size={24} className={styles.categoryIcon} />
-            <span className={styles.categoryLabel}>{label}</span>
+            <Icon size={isBonoCultural ? 28 : 24} className={styles.categoryIcon} />
+            <span className={styles.categoryLabel} style={isBonoCultural ? { fontSize: '0.72rem', whiteSpace: 'normal', lineHeight: 1.1 } : undefined}>{label}</span>
           </button>
         );
       })}

@@ -14,6 +14,7 @@ interface ReceiptData {
 interface ReceiptScannerProps {
   onScanComplete: (data: ReceiptData) => void;
   onClose: () => void;
+  isBonoCultural?: boolean;
 }
 
 const MOCK_RECEIPTS: ReceiptData[] = [
@@ -72,7 +73,7 @@ const MOCK_RECEIPTS: ReceiptData[] = [
   }
 ];
 
-export default function ReceiptScanner({ onScanComplete, onClose }: ReceiptScannerProps) {
+export default function ReceiptScanner({ onScanComplete, onClose, isBonoCultural }: ReceiptScannerProps) {
   const [scanning, setScanning] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<ReceiptData | null>(null);
@@ -108,7 +109,8 @@ export default function ReceiptScanner({ onScanComplete, onClose }: ReceiptScann
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: base64String,
-            mimeType: file.type
+            mimeType: file.type,
+            isBonoCultural
           }),
         });
 
