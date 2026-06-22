@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive } from 'lucide-react';
+import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive, QrCode } from 'lucide-react';
 import { calculateBalances } from '@/lib/settlement';
 import type { Group, User } from '@/types';
 import NotificationCenter from '@/components/NotificationCenter';
+import QRScannerModal from '@/components/QRScannerModal';
 import { offlineDb } from '@/lib/offline-db';
 import styles from './page.module.css';
 
@@ -57,6 +58,7 @@ export default function Dashboard() {
   const [groupName, setGroupName] = useState('');
   const [groupDesc, setGroupDesc] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isBonoCreation, setIsBonoCreation] = useState(false);
   const [bonoActivationDate, setBonoActivationDate] = useState(new Date().toISOString().split('T')[0]);
   const [actionLoading, setActionLoading] = useState(false);
@@ -288,6 +290,34 @@ export default function Dashboard() {
 
       setInviteCode('');
       showToast('¡Te has unido al grupo!');
+      await fetchDashboardData();
+      setIsCreateModalOpen(false);
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al unirse al grupo');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleScanSuccess = async (scannedCode: string) => {
+    setInviteCode(scannedCode);
+    setIsScannerOpen(false);
+    
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/groups/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteCode: scannedCode }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error al unirse al grupo');
+      }
+
+      setInviteCode('');
+      showToast('¡Te has unido al grupo con código QR!');
       await fetchDashboardData();
       setIsCreateModalOpen(false);
     } catch (err: unknown) {
@@ -626,14 +656,36 @@ export default function Dashboard() {
             <form onSubmit={handleJoinGroup} className={styles.actionForm}>
               <div className={styles.inputGroup}>
                 <label htmlFor="inviteCode">Código de Invitación</label>
-                <input
-                  id="inviteCode"
-                  type="text"
-                  placeholder="Ej. A1B2C3D4"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  required
-                />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    id="inviteCode"
+                    type="text"
+                    placeholder="Ej. A1B2C3D4"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsScannerOpen(true)}
+                    style={{
+                      padding: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      color: 'var(--text-primary)',
+                      transition: 'var(--transition-smooth)'
+                    }}
+                    title="Escanear Código QR"
+                  >
+                    <QrCode size={18} />
+                  </button>
+                </div>
               </div>
               <button type="submit" className={styles.actionSubmitBtn} disabled={actionLoading}>
                 <UserPlus size={18} />
@@ -945,14 +997,36 @@ export default function Dashboard() {
               <form onSubmit={handleJoinGroup} className={styles.actionForm}>
                 <div className={styles.inputGroup}>
                   <label htmlFor="modalInviteCode">Código de Invitación</label>
-                  <input
-                    id="modalInviteCode"
-                    type="text"
-                    placeholder="Ej. A1B2C3D4"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    required
-                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      id="modalInviteCode"
+                      type="text"
+                      placeholder="Ej. A1B2C3D4"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                      required
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsScannerOpen(true)}
+                      style={{
+                        padding: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                        transition: 'var(--transition-smooth)'
+                      }}
+                      title="Escanear Código QR"
+                    >
+                      <QrCode size={18} />
+                    </button>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                   <button
@@ -977,6 +1051,12 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+      />
     </>
   );
 }

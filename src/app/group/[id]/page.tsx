@@ -8,8 +8,10 @@ import {
   Search, SlidersHorizontal, FileSpreadsheet,
   Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
   ChevronRight, Music, BookOpen, Laptop, Printer, ImageIcon, X, Upload, Bell, Pencil,
+  QrCode
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
+import QRInviteModal from '@/components/QRInviteModal';
 import DebtSettlement from '@/components/DebtSettlement';
 import ExpenseCharts from '@/components/ExpenseCharts';
 import GroupNotes from '@/components/GroupNotes';
@@ -76,6 +78,7 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [settingsCurrency, setSettingsCurrency] = useState('EUR');
   const [settingsTargetDate, setSettingsTargetDate] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
+  const [requestingDelete, setRequestingDelete] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
@@ -99,6 +102,7 @@ export default function GroupDetailPage({ params }: PageProps) {
 
   // Clipboard copied indicator
   const [copied, setCopied] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
   const showToast = (msg: string) => {
@@ -271,6 +275,42 @@ export default function GroupDetailPage({ params }: PageProps) {
       showToast(err instanceof Error ? err.message : 'Error al guardar los ajustes.');
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!group) return;
+    
+    const confirmMessage = `¿Estás seguro de que quieres eliminar el grupo "${group.name}"?
+Esta acción requiere verificación. Se te enviará un correo con un enlace para confirmar la eliminación permanente del grupo y todos sus gastos asociados.`;
+    
+    if (!confirm(confirmMessage)) return;
+
+    setRequestingDelete(true);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/delete-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al procesar la solicitud de eliminación.');
+      }
+
+      if (data.devLink) {
+        console.log(`[DEVELOPMENT ONLY] Enlace de eliminación: ${data.devLink}`);
+        showToast('Enlace de confirmación generado. Revisa la consola.');
+        alert(`[Desarrollo] Haz clic en Aceptar para simular la confirmación en el navegador: \n\n${data.devLink}`);
+        window.open(data.devLink, '_blank');
+      } else {
+        showToast('Correo de verificación enviado correctamente.');
+      }
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al solicitar la eliminación.');
+    } finally {
+      setRequestingDelete(false);
     }
   };
 
@@ -763,6 +803,24 @@ export default function GroupDetailPage({ params }: PageProps) {
               title="Exportar Factura (PDF)"
             >
               <Printer size={20} />
+            </button>
+            <button
+              onClick={() => setIsQRModalOpen(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: 'var(--radius-sm)',
+                transition: 'var(--transition-smooth)'
+              }}
+              title="Invitar con Código QR"
+            >
+              <QrCode size={20} />
             </button>
             <NotificationCenter />
           </div>
@@ -1414,6 +1472,54 @@ export default function GroupDetailPage({ params }: PageProps) {
               </button>
             </form>
 
+            {/* Danger Zone */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', borderTop: '1px solid #FFC9C9', backgroundColor: 'rgba(255, 0, 0, 0.01)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Zona de Peligro
+              </span>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                Al eliminar este grupo, se borrará definitivamente toda la información, incluyendo los gastos, balances, notas e imágenes asociadas. Esta acción requiere verificación por correo.
+              </p>
+              
+              <button
+                type="button"
+                disabled={requestingDelete}
+                onClick={handleDeleteGroup}
+                className="btn btn-secondary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  borderColor: 'var(--danger)',
+                  color: 'var(--danger)',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  marginTop: '8px'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {requestingDelete ? (
+                  <>
+                    <Loader2 className="animate-spin" size={14} /> Solicitando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} /> Eliminar Grupo
+                  </>
+                )}
+              </button>
+            </div>
+
             {/* Invite Info Box */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '20px' }}>
               <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1441,6 +1547,15 @@ export default function GroupDetailPage({ params }: PageProps) {
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '0.8rem', fontWeight: 700, borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', backgroundColor: 'transparent' }}
                 >
                   <Copy size={14} /> Copiar Enlace de Invitación
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsQRModalOpen(true)}
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '0.8rem', fontWeight: 700, borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', backgroundColor: 'transparent' }}
+                >
+                  <QrCode size={14} /> Mostrar Código QR de Invitación
                 </button>
               </div>
             </div>
@@ -1488,6 +1603,15 @@ export default function GroupDetailPage({ params }: PageProps) {
           group={group}
           expenses={expenses}
           members={members}
+        />
+      )}
+
+      {group && (
+        <QRInviteModal
+          isOpen={isQRModalOpen}
+          onClose={() => setIsQRModalOpen(false)}
+          inviteCode={group.inviteCode}
+          groupName={group.name}
         />
       )}
     </>

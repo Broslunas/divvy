@@ -167,6 +167,20 @@ export const repository = {
       } else {
         return fallbackDb.groups.update(id, updates);
       }
+    },
+
+    async delete(id: string): Promise<boolean> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const result = await MongoGroup.findByIdAndDelete(id);
+          return !!result;
+        } catch {
+          return false;
+        }
+      } else {
+        return fallbackDb.groups.delete(id);
+      }
     }
   },
 
@@ -236,6 +250,26 @@ export const repository = {
         }
       } else {
         return fallbackDb.expenses.delete(id);
+      }
+    },
+
+    async deleteByGroupId(groupId: string): Promise<boolean> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const result = await MongoExpense.deleteMany({ groupId });
+          return result.deletedCount > 0;
+        } catch {
+          return false;
+        }
+      } else {
+        const expenses = await fallbackDb.expenses.findMany(e => e.groupId === groupId);
+        let deletedAny = false;
+        for (const exp of expenses) {
+          const deleted = await fallbackDb.expenses.delete(exp.id);
+          if (deleted) deletedAny = true;
+        }
+        return deletedAny;
       }
     },
 

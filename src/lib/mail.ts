@@ -539,4 +539,40 @@ export async function sendReminderEmail(
   return sendEmail({ toEmail, toName, subject, html, text });
 }
 
+// 11. Verification email for deleting a group
+export async function sendGroupDeletionVerificationEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  actionUrl: string
+) {
+  const subject = `⚠️ Confirmación para eliminar el grupo "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: Hemos recibido una solicitud para eliminar permanentemente tu grupo "${groupName}". Esta acción es irreversible y borrará el grupo, todos sus gastos, balances e imágenes asociadas. Para confirmar la eliminación, haz clic en el siguiente enlace: ${actionUrl}`;
+
+  const bodyContent = `
+    <p class="text">
+      Hemos recibido una solicitud para eliminar permanentemente el grupo <strong>"${groupName}"</strong>.
+    </p>
+    <div class="info-box" style="border-left-color: #D48C45; background-color: #FFF9F3;">
+      <p style="margin: 0; font-size: 13px; color: #D48C45; font-weight: 700; line-height: 1.5;">
+        ⚠️ ATENCIÓN: Esta acción es irreversible. Al confirmar, se eliminarán definitivamente:
+      </p>
+      <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: #6E6D6A; line-height: 1.5;">
+        <li>El grupo y su configuración.</li>
+        <li>Todos los gastos y cuotas registradas.</li>
+        <li>Los saldos y balances entre miembros.</li>
+        <li>La imagen de portada y los archivos del grupo.</li>
+      </ul>
+    </div>
+    <p class="text" style="font-size: 13px; color: #6E6D6A; margin-bottom: 24px;">
+      Si estás seguro de que deseas proceder con la eliminación del grupo, pulsa el botón a continuación para confirmarlo. Este enlace expirará en 1 hora.
+    </p>
+  `;
+
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Confirmar Eliminación');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+
 

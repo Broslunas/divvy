@@ -1,20 +1,52 @@
 # Features a añadir
 
-- [x] Modo offline con sincronización en segundo plano
-- [ ] Escáner de tickets con OCR
-- [ ] Pagos integrados (Stripe / PayPal)
-- [ ] Presupuestos recurrentes mensuales
-- [ ] Categorías personalizables por grupo
-- [ ] Comentarios en gastos individuales
-- [x] Foto del recibo adjunta a cada gasto
-- [x] Recordatorios automáticos de pagos pendientes
-- [ ] Historial de actividad del grupo (feed de eventos)
-- [ ] Conversión multi-moneda automática
-- [x] Exportación a PDF
-- [ ] Modo oscuro
-- [ ] Roles de usuario (admin, miembro, invitado)
-- [ ] Búsqueda por foto de gasto
-- [ ] Programación de gastos recurrentes
-- [ ] Vista calendario de gastos
-- [ ] Presupuestos por categoría
-- [ ] Balance semanal / mensual por email
+- [ ] Modo offline con sincronización en segundo plano
+- [ ] Escáner de tickets con OCR inteligente
+- [ ] Pagos integrados (Stripe, PayPal, Bizum)
+- [ ] Presupuestos recurrentes mensuales configurables
+- [ ] Categorías personalizables y etiquetas por grupo
+- [ ] Chat y comentarios hilos en gastos individuales
+- [ ] Foto del recibo adjunta y optimizada para compresión
+- [ ] Recordatorios automáticos y personalizados de deudas (WhatsApp, Email, Push)
+- [ ] Historial de actividad del grupo (feed de auditoría completo)
+- [ ] Conversión multi-moneda automática con tasas actualizadas diariamente
+- [ ] Exportación de reportes a PDF, Excel y CSV
+- [ ] Modo oscuro automático y personalización de temas visuales
+- [ ] Roles de usuario avanzados (administrador, miembro común, invitado de solo lectura)
+- [ ] Búsqueda visual e indexación basada en contenido de fotos de gastos
+- [ ] Programación automatizada de gastos recurrentes (suscripciones, alquiler)
+- [ ] Vista de calendario interactivo para planificar y revisar gastos vencidos
+- [ ] Límites de presupuestos por categoría con notificaciones de alerta al superar el 80%
+- [ ] Resumen de balances semanales y mensuales enviados por email
+- [ ] Integración con APIs bancarias para sincronizar transacciones en tiempo real
+- [ ] División de gastos avanzada (porcentajes, partes desiguales, valores exactos)
+- [ ] Configuración integrada de propinas e impuestos locales aplicados a la cuenta
+- [ ] Panel de estadísticas avanzadas con gráficos interactivos (torta, barras, evolución temporal)
+- [ ] Creación de subgrupos dentro de un grupo principal para eventos específicos
+- [ ] Opción de archivar y restaurar grupos antiguos o inactivos
+- [ ] Filtros avanzados de gastos (por creador, pagador, rango de monto y etiquetas)
+- [ ] Invitación rápida a grupos mediante código QR y enlaces dinámicos
+- [ ] Notificaciones push instantáneas al crear, editar o eliminar transacciones
+- [ ] Soporte para adjuntar múltiples archivos (PDF, fotos, notas de voz) por gasto
+- [ ] Geolocalización de gastos e integración con Google Maps para ver ubicaciones
+- [ ] Copias de seguridad automáticas y restauración desde Google Drive / iCloud
+- [ ] Widget de escritorio y móvil para registro rápido de transacciones comunes
+- [ ] Conversor manual de divisas integrado en la calculadora de la app
+- [ ] Algoritmo de liquidación simplificada (reduce al mínimo las transferencias cruzadas)
+- [ ] Soporte para gastos co-pagados por múltiples personas en una sola transacción
+- [ ] Desbloqueo y seguridad mediante biometría (FaceID / TouchID)
+- [ ] Plantillas y mensajes humorísticos/amigables para solicitar pagos a amigos
+- [ ] Inicio de sesión rápido y seguro con Magic Links
+- [ ] Modo viaje: congela tasas de cambio y activa notificaciones adaptadas a zonas horarias
+- [ ] Etiquetas globales compartidas entre múltiples grupos para consolidar gastos similares
+- [ ] Vista consolidada de balances totales y deudas acumuladas en toda la plataforma
+- [ ] Entrada de gastos mediante comandos de voz con procesamiento de lenguaje natural
+- [ ] Historial de auditoría completo y control de versiones para gastos editados
+- [ ] Dashboard Web responsivo optimizado para pantallas de ordenadores y tablets
+- [ ] Personalización estética de grupos (colores del tema, iconos y avatares)
+- [ ] Objetivos y metas de ahorro grupal (ej. pozo común para comprar algo específico)
+- [ ] Miembros ficticios/temporales gestionados por el administrador (sin necesidad de email)
+- [ ] Perfiles gestionados independientes para gastos de mascotas o dependientes
+- [ ] Integración y exportación de datos a herramientas de contabilidad (Holded, QuickBooks)
+- [ ] Modo privacidad para ocultar balances rápidos en la pantalla principal en público
+- [ ] Grabador y reproductor de notas de voz explicativas dentro del detalle del gasto
