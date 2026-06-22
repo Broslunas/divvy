@@ -34,6 +34,7 @@ const GroupSchema = new mongoose.Schema({
   notes: { type: String, default: '' },
   targetDate: { type: String },
   isBonoCultural: { type: Boolean, default: false },
+  coverImageUrl: { type: String, default: null },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
@@ -47,6 +48,7 @@ const GroupSchema = new mongoose.Schema({
       ret.notes = ret.notes || '';
       ret.targetDate = ret.targetDate || undefined;
       ret.isBonoCultural = !!ret.isBonoCultural;
+      ret.coverImageUrl = ret.coverImageUrl || null;
       delete ret._id;
       delete ret.__v;
     }

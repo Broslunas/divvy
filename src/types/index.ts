@@ -25,6 +25,7 @@ export interface Group {
   notes?: string; // Travel notes, itinerary, packing list
   targetDate?: string; // Target date of the event/trip (e.g. YYYY-MM-DD)
   isBonoCultural?: boolean; // Flag to identify a Bono Cultural tracker group
+  coverImageUrl?: string | null; // Public CDN URL of the group's cover image
   createdAt: string;
 }
 

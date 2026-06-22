@@ -407,9 +407,26 @@ export default function Dashboard() {
                     key={group.id}
                     className={styles.groupCard}
                     onClick={() => router.push(`/group/${group.id}`)}
-                    style={{ position: 'relative' }}
+                    style={{ position: 'relative', gap: '14px' }}
                   >
-                    <div className={styles.groupInfo}>
+                    {group.coverImageUrl && (
+                      <div style={{
+                        width: '56px',
+                        height: '40px',
+                        borderRadius: 'var(--radius-sm)',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        boxShadow: 'var(--shadow-tactile)',
+                      }}>
+                        <img
+                          src={group.coverImageUrl}
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, minWidth: 0 }}>
+                      <div className={styles.groupInfo}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span className={styles.groupName}>{group.name}</span>
                         {group.isBonoCultural && (
@@ -479,6 +496,7 @@ export default function Dashboard() {
                       </button>
                       <ChevronRight className={styles.chevron} size={20} />
                     </div>
+                  </div>
                   </div>
                 ))
             ) : (

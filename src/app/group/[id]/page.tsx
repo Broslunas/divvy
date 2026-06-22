@@ -7,7 +7,7 @@ import {
   ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle,
   Search, SlidersHorizontal, FileSpreadsheet,
   Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
-  ChevronRight, Music, BookOpen, Laptop, Printer,
+  ChevronRight, Music, BookOpen, Laptop, Printer, ImageIcon, X, Upload,
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import DebtSettlement from '@/components/DebtSettlement';
@@ -77,6 +77,12 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [settingsTargetDate, setSettingsTargetDate] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Cover image states
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverDragOver, setCoverDragOver] = useState(false);
   
   // Filter and Search States
   const [showFilters, setShowFilters] = useState(false);
@@ -145,6 +151,9 @@ export default function GroupDetailPage({ params }: PageProps) {
       setSettingsHasBudget(!!(data.group.budget && data.group.budget > 0));
       setSettingsCurrency(data.group.currency || 'EUR');
       setSettingsTargetDate(data.group.targetDate ? (data.group.targetDate.includes('T') ? data.group.targetDate : data.group.targetDate + 'T00:00') : '');
+      // Reset cover preview to persisted value on every load
+      setCoverPreview(data.group.coverImageUrl || null);
+      setCoverFile(null);
     } catch (e: unknown) {
       console.error(e);
       showToast('Error de conexión o permisos.');
@@ -263,6 +272,65 @@ export default function GroupDetailPage({ params }: PageProps) {
       setSavingSettings(false);
     }
   };
+
+  // ── Cover Image Handlers ──────────────────────────────────────────────────
+  const handleCoverFileChange = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      showToast('Solo se permiten imágenes.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('La imagen no puede superar los 5 MB.');
+      return;
+    }
+    setCoverFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setCoverPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadCover = async () => {
+    if (!coverFile) return;
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('cover', coverFile);
+      const res = await fetch(`/api/groups/${groupId}/cover`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error al subir la imagen.');
+      }
+      const data = await res.json();
+      setCoverPreview(data.coverImageUrl);
+      setCoverFile(null);
+      // Update local group state immediately without full refetch
+      setGroup((prev) => prev ? { ...prev, coverImageUrl: data.coverImageUrl } : prev);
+      showToast('¡Imagen de portada actualizada!');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al subir la imagen.');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleRemoveCover = async () => {
+    if (!group?.coverImageUrl) return;
+    if (!confirm('¿Eliminar la imagen de portada del grupo?')) return;
+    try {
+      const res = await fetch(`/api/groups/${groupId}/cover`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar la imagen.');
+      setCoverPreview(null);
+      setCoverFile(null);
+      setGroup((prev) => prev ? { ...prev, coverImageUrl: null } : prev);
+      showToast('Imagen de portada eliminada.');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al eliminar la imagen.');
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────────
 
   const handleAddExpense = async (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => {
     if (!isOnline) {
@@ -605,42 +673,60 @@ export default function GroupDetailPage({ params }: PageProps) {
           </div>
         )}
         {/* Header */}
-      <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push('/app')} title="Volver al inicio">
-          <ArrowLeft size={20} />
-        </button>
-        <div className={styles.headerInfo}>
-          <span className={styles.groupName}>{group.name}</span>
-          <span className={styles.memberSummary}>
-            {members.length} miembros • Cód: {group.inviteCode}
-          </span>
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={() => window.print()}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              transition: 'var(--transition-smooth)'
-            }}
-            title="Exportar Factura (PDF)"
-          >
-            <Printer size={20} />
+        <header className={styles.header}>
+          <button className={styles.backBtn} onClick={() => router.push('/app')} title="Volver al inicio">
+            <ArrowLeft size={20} />
           </button>
-          <NotificationCenter />
-        </div>
-      </header>
+          <div className={styles.headerInfo}>
+            <span className={styles.groupName}>{group.name}</span>
+            <span className={styles.memberSummary}>
+              {members.length} miembros • Cód: {group.inviteCode}
+            </span>
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => window.print()}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: 'var(--radius-sm)',
+                transition: 'var(--transition-smooth)'
+              }}
+              title="Exportar Factura (PDF)"
+            >
+              <Printer size={20} />
+            </button>
+            <NotificationCenter />
+          </div>
+        </header>
 
       {/* Main Content */}
       <main className={styles.mainContent}>
-        
+
+        {/* Cover hero */}
+        {group.coverImageUrl && (
+          <div style={{
+            borderRadius: 'var(--radius-md)',
+            overflow: 'hidden',
+            boxShadow: 'var(--shadow-subtle)',
+            marginBottom: '20px',
+            aspectRatio: '3 / 1',
+            backgroundColor: 'var(--bg-secondary)',
+          }}>
+            <img
+              src={group.coverImageUrl}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+        )}
+
         {/* Countdown Widget */}
         {group.targetDate && !group.isBonoCultural ? (
           <section style={{ marginBottom: '20px' }}>
@@ -1011,6 +1097,120 @@ export default function GroupDetailPage({ params }: PageProps) {
               <Settings size={20} style={{ color: 'var(--accent-primary)' }} />
               <span>Configuración del Grupo</span>
             </div>
+
+            {/* ── Cover Image Section ──────────────────────────────────────── */}
+            <div style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <ImageIcon size={16} style={{ color: 'var(--accent-primary)' }} />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Imagen de Portada</span>
+              </div>
+
+              {/* Preview area / drop zone */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setCoverDragOver(true); }}
+                onDragLeave={() => setCoverDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setCoverDragOver(false);
+                  const dropped = e.dataTransfer.files[0];
+                  if (dropped) handleCoverFileChange(dropped);
+                }}
+                style={{
+                  position: 'relative',
+                  height: '140px',
+                  borderRadius: 'var(--radius-md)',
+                  border: `2px dashed ${coverDragOver ? 'var(--accent-primary)' : 'var(--border-light)'}`,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.2s ease',
+                  backgroundColor: coverDragOver ? 'rgba(200,122,83,0.05)' : 'var(--bg-secondary)',
+                }}
+                onClick={() => document.getElementById('cover-file-input')?.click()}
+                title="Haz clic o arrastra una imagen"
+              >
+                {coverPreview ? (
+                  <>
+                    <img
+                      src={coverPreview}
+                      alt="Portada del grupo"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      padding: '10px 12px',
+                      gap: '6px',
+                    }}>
+                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                        {coverFile ? 'Nueva imagen seleccionada' : 'Imagen de portada actual'}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px', pointerEvents: 'none' }}>
+                    <Upload size={28} style={{ color: 'var(--text-secondary)', opacity: 0.5 }} />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Arrastra o haz clic para subir</span>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.7 }}>JPG, PNG, WebP · Máx. 5 MB</span>
+                  </div>
+                )}
+              </div>
+
+              <input
+                id="cover-file-input"
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleCoverFileChange(f);
+                  e.target.value = ''; // reset so same file can be re-selected
+                }}
+              />
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                {coverFile && (
+                  <button
+                    type="button"
+                    onClick={handleUploadCover}
+                    disabled={uploadingCover}
+                    className="btn btn-primary"
+                    style={{ flex: 1, padding: '9px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    {uploadingCover ? (
+                      <><Loader2 size={14} className="animate-spin" /> Subiendo...</>
+                    ) : (
+                      <><Upload size={14} /> Subir imagen</>
+                    )}
+                  </button>
+                )}
+                {(group.coverImageUrl && !coverFile) && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCover}
+                    className="btn btn-secondary"
+                    style={{ flex: 1, padding: '9px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#e57373', borderColor: '#e57373' }}
+                  >
+                    <X size={14} /> Eliminar portada
+                  </button>
+                )}
+                {coverFile && (
+                  <button
+                    type="button"
+                    onClick={() => { setCoverFile(null); setCoverPreview(group.coverImageUrl || null); }}
+                    className="btn btn-secondary"
+                    style={{ padding: '9px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    title="Cancelar selección"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+            {/* ────────────────────────────────────────────────────────────── */}
 
             <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* Group Name */}
