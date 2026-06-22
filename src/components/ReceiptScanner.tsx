@@ -262,8 +262,8 @@ export default function ReceiptScanner({ onScanComplete, onClose, isBonoCultural
             }}
           >
             <Loader2 className="animate-spin" size={24} style={{ color: '#4ade80' }} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Procesando con Smart OCR...</span>
-            <span style={{ fontSize: '0.75rem', color: '#ccc' }}>Analizando importes ({progress}%)</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Procesando Imagen...</span>
+            <span style={{ fontSize: '0.75rem', color: '#ccc' }}>Analizando datos ({progress}%)</span>
           </div>
 
           <style>{`
