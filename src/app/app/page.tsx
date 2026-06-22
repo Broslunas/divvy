@@ -305,7 +305,8 @@ export default function Dashboard() {
   const userInitial = user?.username ? user.username.charAt(0) : '?';
 
   return (
-    <div className={`${styles.dashboard} animate-fade-in`}>
+    <>
+      <div className={`${styles.dashboard} animate-fade-in`}>
       {/* Cached data notice */}
       {isShowingCachedData && (
         <div style={{
@@ -639,6 +640,7 @@ export default function Dashboard() {
           )}
         </section>
       </main>
+      </div>
 
       {/* Profile Edit Modal */}
       {isProfileModalOpen && (
@@ -756,6 +758,6 @@ export default function Dashboard() {
 
       {/* Toast */}
       {toastMsg && <div className={styles.toast}>{toastMsg}</div>}
-    </div>
+    </>
   );
 }
