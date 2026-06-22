@@ -348,3 +348,33 @@
   from { transform: translate(-50%, 20px); opacity: 0; }
   to { transform: translate(-50%, 0); opacity: 1; }
 }
+
+.fabBtn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  color: #FFFFFF;
+  border: none;
+  box-shadow: 0 4px 16px rgba(200, 122, 83, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fabBtn:hover {
+  background-color: var(--accent-primary-hover);
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(200, 122, 83, 0.5);
+}
+
+.fabBtn:active {
+  transform: scale(0.95);
+}
+

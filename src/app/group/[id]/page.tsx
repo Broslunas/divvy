@@ -717,8 +717,9 @@ export default function GroupDetailPage({ params }: PageProps) {
     .reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className={`${styles.groupDetail} animate-fade-in`}>
-      <div className="interactive-layout-wrapper">
+    <>
+      <div className={`${styles.groupDetail} animate-fade-in`}>
+        <div className="interactive-layout-wrapper">
         {/* Cached data notice */}
         {isShowingCachedData && (
           <div style={{
@@ -1446,6 +1447,8 @@ export default function GroupDetailPage({ params }: PageProps) {
           </section>
         )}
       </main>
+      </div>
+      </div>
 
       {/* Floating Action Button */}
       {activeTab === 'gastos' && (
@@ -1478,16 +1481,15 @@ export default function GroupDetailPage({ params }: PageProps) {
 
       {/* Toast */}
       {toastMsg && <div className={styles.toast} style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '12px 24px', borderRadius: 'var(--radius-full)', fontSize: '0.85rem', fontWeight: 500, boxShadow: '0 8px 30px rgba(0,0,0,0.15)', zIndex: 100 }}>{toastMsg}</div>}
-    </div>
 
-    {/* Printable Invoice PDF */}
-    {group && members.length > 0 && (
-      <PrintableInvoice
-        group={group}
-        expenses={expenses}
-        members={members}
-      />
-    )}
-  </div>
+      {/* Printable Invoice PDF */}
+      {group && members.length > 0 && (
+        <PrintableInvoice
+          group={group}
+          expenses={expenses}
+          members={members}
+        />
+      )}
+    </>
   );
 }

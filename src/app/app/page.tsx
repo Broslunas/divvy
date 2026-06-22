@@ -64,6 +64,7 @@ export default function Dashboard() {
 
   // Edit Profile States
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editUsername, setEditUsername] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editAvatarColor, setEditAvatarColor] = useState('');
@@ -260,6 +261,7 @@ export default function Dashboard() {
       setIsBonoCreation(false);
       showToast(isBonoCreation ? '¡Rastreador de Bono Cultural creado!' : '¡Grupo creado con éxito!');
       await fetchDashboardData();
+      setIsCreateModalOpen(false);
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error al crear grupo');
     } finally {
@@ -287,6 +289,7 @@ export default function Dashboard() {
       setInviteCode('');
       showToast('¡Te has unido al grupo!');
       await fetchDashboardData();
+      setIsCreateModalOpen(false);
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error al unirse al grupo');
     } finally {
@@ -758,6 +761,222 @@ export default function Dashboard() {
 
       {/* Toast */}
       {toastMsg && <div className={styles.toast}>{toastMsg}</div>}
+
+      {/* Floating Action Button (FAB) */}
+      <button
+        onClick={() => setIsCreateModalOpen(true)}
+        title="Crear o unirse a un grupo"
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--accent-primary)',
+          color: '#FFFFFF',
+          border: 'none',
+          boxShadow: '0 4px 16px rgba(200, 122, 83, 0.4)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999, /* High z-index to stay above other page elements */
+        }}
+      >
+        <Plus size={28} />
+      </button>
+
+      {/* Create/Join Modal */}
+      {isCreateModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setIsCreateModalOpen(false)}
+        >
+          <div
+            style={{
+              width: '90%',
+              maxWidth: '450px',
+              backgroundColor: 'var(--bg-card)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '24px',
+              boxShadow: 'var(--shadow-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Crear o Unirse a un Grupo</h2>
+            
+            <div className={styles.actionTabs} style={{ marginTop: '8px', marginBottom: '8px' }}>
+              <button
+                className={`${styles.tabBtn} ${activeTab === 'create' ? styles.active : ''}`}
+                onClick={() => setActiveTab('create')}
+              >
+                Nuevo Grupo
+              </button>
+              <button
+                className={`${styles.tabBtn} ${activeTab === 'join' ? styles.active : ''}`}
+                onClick={() => setActiveTab('join')}
+              >
+                Unirse con Código
+              </button>
+            </div>
+
+            {activeTab === 'create' ? (
+              <form onSubmit={handleCreateGroup} className={styles.actionForm}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBonoCreation(false);
+                      if (groupName === 'Mi Bono Cultural Joven') setGroupName('');
+                    }}
+                    style={{
+                      padding: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-light)',
+                      backgroundColor: !isBonoCreation ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                      color: !isBonoCreation ? '#FFF' : 'var(--text-primary)',
+                      cursor: 'pointer',
+                      transition: 'var(--transition-smooth)'
+                    }}
+                  >
+                    Grupo Estándar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBonoCreation(true);
+                      if (!groupName) setGroupName('Mi Bono Cultural Joven');
+                    }}
+                    style={{
+                      padding: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-light)',
+                      backgroundColor: isBonoCreation ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                      color: isBonoCreation ? '#FFF' : 'var(--text-primary)',
+                      cursor: 'pointer',
+                      transition: 'var(--transition-smooth)'
+                    }}
+                  >
+                    🎟️ Bono Cultural
+                  </button>
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="modalGroupName">
+                    {isBonoCreation ? 'Nombre de tu Bono' : 'Nombre del Grupo/Viaje'}
+                  </label>
+                  <input
+                    id="modalGroupName"
+                    type="text"
+                    placeholder={isBonoCreation ? "Ej. Mi Bono Cultural 2026" : "Ej. Viaje a Japón 2026"}
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {isBonoCreation ? (
+                  <div className={styles.inputGroup} style={{ animation: 'fadeIn 0.2s ease' }}>
+                    <label htmlFor="modalBonoActivationDate">Fecha de activación de la tarjeta</label>
+                    <input
+                      id="modalBonoActivationDate"
+                      type="date"
+                      value={bonoActivationDate}
+                      onChange={(e) => setBonoActivationDate(e.target.value)}
+                      required
+                    />
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.2 }}>
+                      Se usará para calcular exactamente el plazo límite de 12 meses para consumir el saldo.
+                    </span>
+                  </div>
+                ) : (
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="modalGroupDesc">Descripción (Opcional)</label>
+                    <input
+                      id="modalGroupDesc"
+                      type="text"
+                      placeholder="Ej. Gastos compartidos de las vacaciones"
+                      value={groupDesc}
+                      onChange={(e) => setGroupDesc(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    style={{ flex: 1, padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className={styles.actionSubmitBtn}
+                    style={{ flex: 1 }}
+                    disabled={actionLoading}
+                  >
+                    <Plus size={18} />
+                    {actionLoading ? 'Creando...' : 'Crear'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleJoinGroup} className={styles.actionForm}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="modalInviteCode">Código de Invitación</label>
+                  <input
+                    id="modalInviteCode"
+                    type="text"
+                    placeholder="Ej. A1B2C3D4"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    style={{ flex: 1, padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className={styles.actionSubmitBtn}
+                    style={{ flex: 1 }}
+                    disabled={actionLoading}
+                  >
+                    <UserPlus size={18} />
+                    {actionLoading ? 'Uniéndose...' : 'Unirse'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
