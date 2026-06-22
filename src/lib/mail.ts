@@ -495,4 +495,48 @@ export async function sendSplitPendingNotificationEmail(
   return sendEmail({ toEmail, toName, subject, html, text });
 }
 
+// 10. Reminder email for pending payment
+export async function sendReminderEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  expenseTitle: string,
+  amount: number,
+  daysPending: number,
+  groupId: string
+) {
+  const subject = `⏳ Recordatorio: tienes un pago pendiente en "${groupName}" — Divvy`;
+  const text = `Hola ${toName}: Te recordamos que tienes un pago pendiente de ${amount.toFixed(2)}€ por el gasto "${expenseTitle}" en el grupo "${groupName}" (${daysPending} días sin liquidar). Por favor, ponte al día con tus cuentas. Ver grupo en: https://www.divvy.es/group/${groupId}`;
+
+  const bodyContent = `
+    <p class="text">
+      Te recordamos que tienes un pago pendiente en el grupo <strong>"${groupName}"</strong>.
+    </p>
+    <div class="info-box" style="border-left-color: #D48C45;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-bottom: 6px;">Gasto:</td>
+          <td style="font-size: 14px; color: #1C1C1E; font-weight: 700; text-align: right; padding-bottom: 6px;">${expenseTitle}</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-top: 6px;">Importe pendiente:</td>
+          <td style="font-size: 16px; color: #D48C45; font-weight: 800; text-align: right; padding-top: 6px;">${amount.toFixed(2)}€</td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #6E6D6A; padding-top: 6px;">Días sin liquidar:</td>
+          <td style="font-size: 14px; color: #6E6D6A; text-align: right; padding-top: 6px;">${daysPending} días</td>
+        </tr>
+      </table>
+    </div>
+    <p class="text" style="font-size: 13px; color: #6E6D6A;">
+      Por favor, ponte al día con tus cuentas para mantener el grupo al corriente.
+    </p>
+  `;
+
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Gastos del Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
 

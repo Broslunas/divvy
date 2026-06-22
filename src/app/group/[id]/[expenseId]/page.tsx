@@ -7,7 +7,7 @@ import {
   ArrowLeft, Trash2, Loader2, CheckSquare, Square,
   Utensils, Car, Home, ShoppingBag, Ticket, Package,
   Calendar, CreditCard, Hash, Users, FileText,
-  Check, AlertCircle, Equal, DollarSign, Percent, Users2,
+  Check, AlertCircle, Equal, DollarSign, Percent, Users2, ImageIcon,
 } from 'lucide-react';
 import type { Group, Expense, User, ExpenseSplit, ItemizedBillItem, SplitType } from '@/types';
 import { getCurrencySymbol, computeItemShare } from '@/lib/utils';
@@ -478,6 +478,30 @@ export default function ExpenseDetailPage({ params }: PageProps) {
               {totalAllocated.toFixed(2)} {currencySymbol}
             </span>
           </div>
+        </section>
+      )}
+
+      {/* --- Receipt Image --- */}
+      {expense.receiptImageUrl && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            <ImageIcon size={14} /> Foto del recibo
+          </h2>
+          <a href={expense.receiptImageUrl} target="_blank" rel="noopener noreferrer">
+            <img
+              src={expense.receiptImageUrl}
+              alt="Recibo del gasto"
+              style={{
+                width: '100%',
+                maxHeight: '300px',
+                objectFit: 'contain',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)',
+                backgroundColor: 'var(--bg-secondary)',
+                cursor: 'zoom-in',
+              }}
+            />
+          </a>
         </section>
       )}
 

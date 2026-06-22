@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Camera, Sparkles, Tag, ChevronDown, Calendar, Hash, FileText, CreditCard } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Camera, Sparkles, Tag, ChevronDown, Calendar, Hash, FileText, CreditCard, ImagePlus, X } from 'lucide-react';
 import CategoryPicker from './CategoryPicker';
 import QuickTemplates from './QuickTemplates';
 import styles from './expense.module.css';
@@ -25,6 +25,8 @@ interface StepBasicInfoProps {
   onOpenScan: () => void;
   onOpenAI: () => void;
   isBonoCultural?: boolean;
+  receiptPreview: string | null;
+  onReceiptFileSelect: (file: File | null) => void;
 }
 
 export default function StepBasicInfo({
@@ -46,8 +48,11 @@ export default function StepBasicInfo({
   onOpenScan,
   onOpenAI,
   isBonoCultural,
+  receiptPreview,
+  onReceiptFileSelect,
 }: StepBasicInfoProps) {
   const [showMore, setShowMore] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAmountChange = (value: string) => {
     // Allow only digits and a single decimal point
@@ -79,7 +84,39 @@ export default function StepBasicInfo({
           <Sparkles size={15} />
           Entrada por IA
         </button>
+        <button type="button" className={styles.aiBtnScan} onClick={() => fileInputRef.current?.click()}>
+          <ImagePlus size={15} />
+          {receiptPreview ? 'Cambiar foto' : 'Adjuntar foto'}
+        </button>
       </div>
+
+      {/* Hidden file input for receipt photo */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0] || null;
+          onReceiptFileSelect(file);
+          e.target.value = '';
+        }}
+      />
+
+      {/* Receipt preview */}
+      {receiptPreview && (
+        <div className={styles.receiptPreviewWrap}>
+          <img src={receiptPreview} alt="Preview recibo" className={styles.receiptPreviewImg} />
+          <button
+            type="button"
+            className={styles.receiptPreviewRemove}
+            onClick={() => onReceiptFileSelect(null)}
+            title="Quitar foto"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Big Amount Input */}
       <div className={styles.amountContainer}>

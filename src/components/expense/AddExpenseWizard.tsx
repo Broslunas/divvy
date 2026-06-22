@@ -18,7 +18,7 @@ interface AddExpenseWizardProps {
   members: Omit<UserType, 'passwordHash'>[];
   currentUserId: string;
   currency?: string;
-  onAddExpense: (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => Promise<void>;
+  onAddExpense: (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => Promise<string | undefined>;
   isBonoCultural?: boolean;
 }
 
@@ -75,6 +75,10 @@ export default function AddExpenseWizard({
   const [splitType, setSplitType] = useState<SplitType>('equal');
   const [splitValues, setSplitValues] = useState<Record<string, string>>({});
 
+  // --- Receipt ---
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+
   // --- Itemized ---
   const [itemizedItems, setItemizedItems] = useState<ItemizedBillItem[]>([]);
 
@@ -124,6 +128,18 @@ export default function AddExpenseWizard({
     }
   }, [amount, paidById, isMultiPayer, members]);
 
+  // --- Receipt file handler ---
+  const handleReceiptFileSelect = (file: File | null) => {
+    setReceiptFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setReceiptPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setReceiptPreview(null);
+    }
+  };
+
   // --- Full reset ---
   const resetForm = useCallback(() => {
     setCurrentStep(1);
@@ -142,6 +158,8 @@ export default function AddExpenseWizard({
     setPaidById(currentUserId);
     setSplitType('equal');
     setItemizedItems([]);
+    setReceiptFile(null);
+    setReceiptPreview(null);
   }, [currentUserId, isBonoCultural]);
 
   // --- Close handler ---
@@ -341,7 +359,7 @@ export default function AddExpenseWizard({
       .filter(t => t.length > 0);
 
     try {
-      await onAddExpense({
+      const expenseId = await onAddExpense({
         title,
         amount: parsedAmount,
         date: new Date(date).toISOString(),
@@ -356,6 +374,20 @@ export default function AddExpenseWizard({
         paymentMethod,
         items: itemizedItems.length > 0 ? itemizedItems : undefined,
       });
+
+      // Upload receipt photo if one was selected
+      if (receiptFile && expenseId) {
+        try {
+          const receiptFormData = new FormData();
+          receiptFormData.append('receipt', receiptFile);
+          await fetch(`/api/expenses/${expenseId}/receipt`, {
+            method: 'POST',
+            body: receiptFormData,
+          });
+        } catch (err) {
+          console.error('Error uploading receipt:', err);
+        }
+      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -466,6 +498,8 @@ export default function AddExpenseWizard({
                   onOpenScan={() => setActiveMode('scan')}
                   onOpenAI={() => setActiveMode('ai')}
                   isBonoCultural={isBonoCultural}
+                  receiptPreview={receiptPreview}
+                  onReceiptFileSelect={handleReceiptFileSelect}
                 />
               )}
 
@@ -512,6 +546,7 @@ export default function AddExpenseWizard({
                   members={members}
                   currentUserId={currentUserId}
                   itemizedItems={itemizedItems}
+                  receiptPreview={receiptPreview}
                 />
               )}
             </>

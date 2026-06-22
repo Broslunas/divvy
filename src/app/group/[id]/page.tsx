@@ -7,7 +7,7 @@ import {
   ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle,
   Search, SlidersHorizontal, FileSpreadsheet,
   Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
-  ChevronRight, Music, BookOpen, Laptop, Printer, ImageIcon, X, Upload,
+  ChevronRight, Music, BookOpen, Laptop, Printer, ImageIcon, X, Upload, Bell,
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import DebtSettlement from '@/components/DebtSettlement';
@@ -332,7 +332,7 @@ export default function GroupDetailPage({ params }: PageProps) {
   };
   // ─────────────────────────────────────────────────────────────────────────
 
-  const handleAddExpense = async (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => {
+  const handleAddExpense = async (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>): Promise<string | undefined> => {
     if (!isOnline) {
       // Create a temporary optimistic expense to show in the UI immediately
       const tempId = `offline-${Date.now()}`;
@@ -373,8 +373,10 @@ export default function GroupDetailPage({ params }: PageProps) {
         throw new Error(data.error || 'Error al guardar gasto');
       }
 
+      const createdExpense = await res.json();
       showToast('¡Gasto añadido con éxito!');
       await fetchGroupDetails();
+      return createdExpense.id;
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error al añadir el gasto');
       throw err;
@@ -451,6 +453,22 @@ export default function GroupDetailPage({ params }: PageProps) {
       await fetchGroupDetails();
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Error al liquidar la deuda');
+    }
+  };
+
+  const [sendingReminders, setSendingReminders] = useState(false);
+
+  const handleSendReminders = async () => {
+    setSendingReminders(true);
+    try {
+      const res = await fetch(`/api/reminders?groupId=${groupId}`, { method: 'POST' });
+      if (!res.ok) throw new Error('Error al enviar recordatorios');
+      const data = await res.json();
+      showToast(`📨 ${data.sent} recordatorio${data.sent !== 1 ? 's' : ''} enviado${data.sent !== 1 ? 's' : ''}`);
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al enviar recordatorios');
+    } finally {
+      setSendingReminders(false);
     }
   };
 
@@ -915,15 +933,26 @@ export default function GroupDetailPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* CSV/JSON Exports */}
-              <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '12px', justifyContent: 'flex-end' }}>
-                <button onClick={handleExportCSV} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <FileSpreadsheet size={14} /> Exportar CSV
+              {/* Reminders + CSV/JSON Exports */}
+              <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button
+                  onClick={handleSendReminders}
+                  disabled={sendingReminders}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', opacity: sendingReminders ? 0.6 : 1 }}
+                  title="Enviar recordatorios de pagos pendientes"
+                >
+                  {sendingReminders ? <Loader2 size={14} className="animate-spin" /> : <Bell size={14} />}
+                  {sendingReminders ? 'Enviando...' : 'Recordatorios'}
                 </button>
-                <span style={{ color: 'var(--border-light)' }}>|</span>
-                <button onClick={handleExportJSON} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <FileCode size={14} /> Exportar JSON
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button onClick={handleExportCSV} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <FileSpreadsheet size={14} /> Exportar CSV
+                  </button>
+                  <span style={{ color: 'var(--border-light)' }}>|</span>
+                  <button onClick={handleExportJSON} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <FileCode size={14} /> Exportar JSON
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1004,6 +1033,12 @@ export default function GroupDetailPage({ params }: PageProps) {
                                 {expense.paymentMethod && expense.paymentMethod !== 'cash' && (
                                   <span className={styles.settlementBadge} style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                                     {expense.paymentMethod.toUpperCase()}
+                                  </span>
+                                )}
+
+                                {expense.receiptImageUrl && (
+                                  <span className={styles.settlementBadge} style={{ backgroundColor: 'rgba(200, 122, 83, 0.08)', color: 'var(--accent-primary)' }}>
+                                    📎 Recibo
                                   </span>
                                 )}
 

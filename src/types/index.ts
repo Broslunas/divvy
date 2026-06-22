@@ -35,6 +35,7 @@ export interface ExpenseSplit {
   userId: string;
   value: number; // For 'exact': amount, 'percentage': %, 'shares': share count, 'equal': 0
   isPaid: boolean; // Tracks if this individual share has been reimbursed to the payer
+  lastReminderSentAt?: string; // ISO date of last payment reminder sent to this user
 }
 
 export interface MultiPayer {
@@ -69,5 +70,6 @@ export interface Expense {
   paymentMethod?: string; // 'cash' | 'card' | 'bizum' | 'paypal'
   items?: ItemizedBillItem[]; // Desglose por productos/artículos
   ticketUploaded?: boolean; // Flag for Spain's Bono Cultural ticket justification status
+  receiptImageUrl?: string; // URL of the uploaded receipt photo
   createdAt: string;
 }

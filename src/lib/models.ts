@@ -59,7 +59,8 @@ const GroupSchema = new mongoose.Schema({
 const ExpenseSplitSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   value: { type: Number, required: true },
-  isPaid: { type: Boolean, default: false }
+  isPaid: { type: Boolean, default: false },
+  lastReminderSentAt: { type: String }
 }, { _id: false });
 
 const MultiPayerSchema = new mongoose.Schema({
@@ -91,6 +92,7 @@ const ExpenseSchema = new mongoose.Schema({
   paymentMethod: { type: String, default: 'cash' },
   items: [ItemizedBillItemSchema],
   ticketUploaded: { type: Boolean, default: false },
+  receiptImageUrl: { type: String, default: null },
   createdAt: { type: Date, default: Date.now }
 }, {
   toJSON: {
@@ -114,6 +116,7 @@ const ExpenseSchema = new mongoose.Schema({
       }));
       ret.multiPayers = ret.multiPayers || [];
       ret.ticketUploaded = !!ret.ticketUploaded;
+      ret.receiptImageUrl = ret.receiptImageUrl || undefined;
       delete ret._id;
       delete ret.__v;
     }

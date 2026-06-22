@@ -43,6 +43,8 @@ interface StepReviewProps {
   currentUserId: string;
   // Itemized
   itemizedItems: ItemizedBillItem[];
+  // Receipt
+  receiptPreview: string | null;
 }
 
 // --- Category → Icon map ---
@@ -117,6 +119,7 @@ export default function StepReview({
   members,
   currentUserId,
   itemizedItems,
+  receiptPreview,
 }: StepReviewProps) {
   const currencySymbol = getCurrencySymbol(currency);
   const totalAmount = parseFloat(amount) || 0;
@@ -341,6 +344,23 @@ export default function StepReview({
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
             {notes}
           </p>
+        )}
+
+        {/* --- Receipt Preview --- */}
+        {receiptPreview && (
+          <div style={{
+            borderRadius: 'var(--radius-md)',
+            overflow: 'hidden',
+            border: '1px solid var(--border-light)',
+            backgroundColor: 'var(--bg-secondary)',
+            maxHeight: '160px',
+          }}>
+            <img
+              src={receiptPreview}
+              alt="Foto del recibo"
+              style={{ width: '100%', height: '100%', maxHeight: '160px', objectFit: 'contain', display: 'block' }}
+            />
+          </div>
         )}
       </div>
     </div>
