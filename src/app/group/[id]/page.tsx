@@ -7,7 +7,7 @@ import {
   ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle,
   Search, SlidersHorizontal, FileSpreadsheet,
   Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
-  ChevronRight, Music, BookOpen, Laptop, Printer, ImageIcon, X, Upload, Bell,
+  ChevronRight, Music, BookOpen, Laptop, Printer, ImageIcon, X, Upload, Bell, Pencil,
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import DebtSettlement from '@/components/DebtSettlement';
@@ -77,6 +77,7 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [settingsTargetDate, setSettingsTargetDate] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   // Cover image states
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -379,6 +380,48 @@ export default function GroupDetailPage({ params }: PageProps) {
       return createdExpense.id;
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error al añadir el gasto');
+      throw err;
+    }
+  };
+
+  const handleUpdateExpense = async (expenseId: string, expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>): Promise<string | undefined> => {
+    if (!isOnline) {
+      const opId = `offline-edit-${Date.now()}`;
+      await offlineDb.queue.add({
+        id: opId,
+        method: 'PUT',
+        url: '/api/expenses',
+        body: { id: expenseId, ...expenseData },
+        createdAt: new Date().toISOString(),
+        label: `Editar gasto "${expenseData.title}"`,
+      });
+      setExpenses((prev) =>
+        prev.map((ex) =>
+          ex.id === expenseId ? { ...ex, ...expenseData } : ex
+        )
+      );
+      await refreshPendingCount();
+      showToast('Gasto actualizado localmente — se sincronizará cuando vuelva la conexión');
+      return expenseId;
+    }
+
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: expenseId, ...expenseData }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error al actualizar gasto');
+      }
+
+      showToast('¡Gasto actualizado con éxito!');
+      await fetchGroupDetails();
+      return expenseId;
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al actualizar el gasto');
       throw err;
     }
   };
@@ -1059,6 +1102,14 @@ export default function GroupDetailPage({ params }: PageProps) {
                         </Link>
 
                         {(isPayerCurrentUser || expense.paidById === currentUser?.id) && (
+                          <div style={{ display: 'flex', gap: '2px' }}>
+                            <button
+                              className={styles.deleteBtn}
+                              onClick={() => { setEditingExpense(expense); setIsAddModalOpen(true); }}
+                              title="Editar gasto"
+                            >
+                              <Pencil size={14} />
+                            </button>
                             <button
                               className={styles.deleteBtn}
                               onClick={(e) => handleDeleteExpense(e, expense.id)}
@@ -1066,7 +1117,8 @@ export default function GroupDetailPage({ params }: PageProps) {
                             >
                               <Trash2 size={15} />
                             </button>
-                          )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1399,22 +1451,24 @@ export default function GroupDetailPage({ params }: PageProps) {
       {activeTab === 'gastos' && (
         <button
           className={styles.fab}
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={() => { setEditingExpense(null); setIsAddModalOpen(true); }}
           title="Añadir gasto"
         >
           <Plus size={24} />
         </button>
       )}
 
-      {/* Modal Add Expense */}
+      {/* Modal Add / Edit Expense */}
       {currentUser && (
         <AddExpenseWizard
           isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
+          onClose={() => { setIsAddModalOpen(false); setEditingExpense(null); }}
           members={members}
           currentUserId={currentUser.id}
           currency={group?.currency}
           onAddExpense={handleAddExpense}
+          onUpdateExpense={handleUpdateExpense}
+          editingExpense={editingExpense}
           isBonoCultural={group?.isBonoCultural}
         />
       )}

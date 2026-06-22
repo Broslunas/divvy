@@ -19,6 +19,8 @@ interface AddExpenseWizardProps {
   currentUserId: string;
   currency?: string;
   onAddExpense: (expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => Promise<string | undefined>;
+  onUpdateExpense?: (expenseId: string, expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>) => Promise<string | undefined>;
+  editingExpense?: Expense | null;
   isBonoCultural?: boolean;
 }
 
@@ -48,6 +50,8 @@ export default function AddExpenseWizard({
   currentUserId,
   currency,
   onAddExpense,
+  onUpdateExpense,
+  editingExpense,
   isBonoCultural,
 }: AddExpenseWizardProps) {
   // --- Wizard navigation ---
@@ -105,17 +109,64 @@ export default function AddExpenseWizard({
   }, [members, splitType, currentUserId, amount]);
 
   useEffect(() => {
-    if (isOpen && members.length > 0) {
+    if (isOpen && members.length > 0 && !editingExpense) {
       initializeValues();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, members, splitType]);
+  }, [isOpen, members, splitType, editingExpense]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !editingExpense) {
       setCategory(isBonoCultural ? 'Artes en vivo, patrimonio y audiovisual' : 'Comida');
     }
-  }, [isOpen, isBonoCultural]);
+  }, [isOpen, isBonoCultural, editingExpense]);
+
+  // Populate form when editing an existing expense
+  useEffect(() => {
+    if (!isOpen || !editingExpense) return;
+
+    setTitle(editingExpense.title);
+    setAmount(editingExpense.amount.toString());
+    setDate(editingExpense.date.split('T')[0]);
+    setCategory(editingExpense.category);
+    setNotes(editingExpense.notes || '');
+    setTagsInput(editingExpense.tags?.join(', ') || '');
+    setPaymentMethod(editingExpense.paymentMethod || 'cash');
+    setSplitType(editingExpense.splitType);
+
+    if (editingExpense.multiPayers && editingExpense.multiPayers.length > 0) {
+      setIsMultiPayer(true);
+      const payerAmountsInit: Record<string, string> = {};
+      members.forEach((m) => {
+        const payer = editingExpense.multiPayers?.find((p) => p.userId === m.id);
+        payerAmountsInit[m.id] = payer ? payer.amount.toString() : '0';
+      });
+      setPayerAmounts(payerAmountsInit);
+    } else {
+      setIsMultiPayer(false);
+      setPaidById(editingExpense.paidById);
+    }
+
+    if (editingExpense.splitType === 'equal') {
+      const splitsInit: Record<string, string> = {};
+      members.forEach((m) => {
+        const hasSplit = editingExpense.splits.some((s) => s.userId === m.id);
+        splitsInit[m.id] = hasSplit ? 'true' : 'false';
+      });
+      setSplitValues(splitsInit);
+    } else {
+      const splitsInit: Record<string, string> = {};
+      members.forEach((m) => {
+        const split = editingExpense.splits.find((s) => s.userId === m.id);
+        splitsInit[m.id] = split ? split.value.toString() : '0';
+      });
+      setSplitValues(splitsInit);
+    }
+
+    if (editingExpense.items && editingExpense.items.length > 0) {
+      setItemizedItems(editingExpense.items);
+    }
+  }, [isOpen, editingExpense, members]);
 
   // Sync primary payer amount
   useEffect(() => {
@@ -325,18 +376,21 @@ export default function AddExpenseWizard({
     setError('');
     const parsedAmount = parseFloat(amount);
 
-    // Build splits
+    // Build splits - preserve isPaid status when editing
+    const existingSplits = editingExpense?.splits || [];
     const splitsPayload: ExpenseSplit[] = [];
     if (splitType === 'equal') {
       members.forEach((m) => {
         if (splitValues[m.id] === 'true') {
-          splitsPayload.push({ userId: m.id, value: 0, isPaid: false });
+          const existing = existingSplits.find((s) => s.userId === m.id);
+          splitsPayload.push({ userId: m.id, value: 0, isPaid: existing?.isPaid || false });
         }
       });
     } else {
       members.forEach((m) => {
         const val = parseFloat(splitValues[m.id] || '0');
-        splitsPayload.push({ userId: m.id, value: val, isPaid: false });
+        const existing = existingSplits.find((s) => s.userId === m.id);
+        splitsPayload.push({ userId: m.id, value: val, isPaid: existing?.isPaid || false });
       });
     }
 
@@ -359,7 +413,7 @@ export default function AddExpenseWizard({
       .filter(t => t.length > 0);
 
     try {
-      const expenseId = await onAddExpense({
+      const expenseData = {
         title,
         amount: parsedAmount,
         date: new Date(date).toISOString(),
@@ -368,24 +422,30 @@ export default function AddExpenseWizard({
         multiPayers: multiPayersPayload,
         splitType,
         splits: splitsPayload,
-        isSettlement: false,
+        isSettlement: editingExpense?.isSettlement ?? false,
         notes: notes.trim(),
         tags: tagsPayload,
         paymentMethod,
         items: itemizedItems.length > 0 ? itemizedItems : undefined,
-      });
+      };
 
-      // Upload receipt photo if one was selected
-      if (receiptFile && expenseId) {
-        try {
-          const receiptFormData = new FormData();
-          receiptFormData.append('receipt', receiptFile);
-          await fetch(`/api/expenses/${expenseId}/receipt`, {
-            method: 'POST',
-            body: receiptFormData,
-          });
-        } catch (err) {
-          console.error('Error uploading receipt:', err);
+      if (editingExpense) {
+        await onUpdateExpense?.(editingExpense.id, expenseData);
+      } else {
+        const expenseId = await onAddExpense(expenseData);
+
+        // Upload receipt photo if one was selected
+        if (receiptFile && expenseId) {
+          try {
+            const receiptFormData = new FormData();
+            receiptFormData.append('receipt', receiptFile);
+            await fetch(`/api/expenses/${expenseId}/receipt`, {
+              method: 'POST',
+              body: receiptFormData,
+            });
+          } catch (err) {
+            console.error('Error uploading receipt:', err);
+          }
         }
       }
 
@@ -406,6 +466,7 @@ export default function AddExpenseWizard({
     if (activeMode === 'scan') return 'Escanear ticket';
     if (activeMode === 'ai') return 'Entrada por IA';
     if (activeMode === 'itemized') return 'Desglose de artículos';
+    if (editingExpense) return 'Editar gasto';
     return STEP_TITLES[currentStep - 1];
   };
 
@@ -444,7 +505,7 @@ export default function AddExpenseWizard({
               <div className={styles.successIcon} style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--success-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Check size={32} style={{ color: 'var(--success)' }} />
               </div>
-              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>Gasto guardado</span>
+              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{editingExpense ? 'Gasto actualizado' : 'Gasto guardado'}</span>
             </div>
           )}
 
@@ -577,12 +638,12 @@ export default function AddExpenseWizard({
                 {loading ? (
                   <>
                     <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                    Guardando...
+                    {editingExpense ? 'Guardando...' : 'Guardando...'}
                   </>
                 ) : (
                   <>
                     <Check size={16} />
-                    Confirmar gasto
+                    {editingExpense ? 'Guardar cambios' : 'Confirmar gasto'}
                   </>
                 )}
               </button>

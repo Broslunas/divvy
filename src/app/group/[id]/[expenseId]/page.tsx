@@ -7,10 +7,12 @@ import {
   ArrowLeft, Trash2, Loader2, CheckSquare, Square,
   Utensils, Car, Home, ShoppingBag, Ticket, Package,
   Calendar, CreditCard, Hash, Users, FileText,
-  Check, AlertCircle, Equal, DollarSign, Percent, Users2, ImageIcon,
+  Check, AlertCircle, Equal, DollarSign, Percent, Users2, ImageIcon, Pencil,
 } from 'lucide-react';
+import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import type { Group, Expense, User, ExpenseSplit, ItemizedBillItem, SplitType } from '@/types';
 import { getCurrencySymbol, computeItemShare } from '@/lib/utils';
+import { offlineDb } from '@/lib/offline-db';
 import styles from './expense-detail.module.css';
 
 interface PageProps {
@@ -83,6 +85,7 @@ export default function ExpenseDetailPage({ params }: PageProps) {
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const currencySymbol = getCurrencySymbol(group?.currency);
 
@@ -176,6 +179,28 @@ export default function ExpenseDetailPage({ params }: PageProps) {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al eliminar el gasto.');
       setDeleting(false);
+    }
+  };
+
+  const handleUpdateExpense = async (expenseId: string, expenseData: Omit<Expense, 'id' | 'groupId' | 'createdAt'>): Promise<string | undefined> => {
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: expenseId, ...expenseData }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error al actualizar gasto');
+      }
+
+      await fetchAll();
+      setEditModalOpen(false);
+      return expenseId;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar el gasto');
+      throw err;
     }
   };
 
@@ -288,17 +313,29 @@ export default function ExpenseDetailPage({ params }: PageProps) {
         <Link href={`/group/${groupId}`} className={styles.backBtn}>
           <ArrowLeft size={16} /> Volver al grupo
         </Link>
-        {canDelete && (
-          <button
-            className={styles.deleteBtn}
-            onClick={handleDelete}
-            disabled={deleting}
-            title="Eliminar gasto"
-          >
-            {deleting ? <Loader2 size={15} className={styles.spin} /> : <Trash2 size={15} />}
-            <span>Eliminar</span>
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          {canDelete && !expense.isSettlement && (
+            <button
+              className={styles.deleteBtn}
+              onClick={() => setEditModalOpen(true)}
+              title="Editar gasto"
+            >
+              <Pencil size={15} />
+              <span>Editar</span>
+            </button>
+          )}
+          {canDelete && (
+            <button
+              className={styles.deleteBtn}
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Eliminar gasto"
+            >
+              {deleting ? <Loader2 size={15} className={styles.spin} /> : <Trash2 size={15} />}
+              <span>Eliminar</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {error && (
@@ -528,6 +565,20 @@ export default function ExpenseDetailPage({ params }: PageProps) {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Edit Modal */}
+      {currentUser && expense && (
+        <AddExpenseWizard
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          members={members}
+          currentUserId={currentUser.id}
+          currency={group?.currency}
+          onAddExpense={async () => undefined}
+          onUpdateExpense={handleUpdateExpense}
+          editingExpense={expense}
+        />
       )}
     </div>
   );

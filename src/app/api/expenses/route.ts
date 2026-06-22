@@ -19,6 +19,7 @@ interface RawMultiPayer {
 }
 
 interface RawPayload {
+  id?: unknown;
   groupId?: unknown;
   title?: unknown;
   amount?: unknown;
@@ -293,7 +294,7 @@ export async function DELETE(request: Request) {
   }
 }
 
-// PUT /api/expenses - Update an expense (e.g. toggle isPaid for a split)
+// PUT /api/expenses - Update an expense (full edit or partial update)
 export async function PUT(request: Request) {
   try {
     const user = await getCurrentUser();
@@ -301,11 +302,13 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
 
-    const { id, ...updates } = await request.json();
+    const body = (await request.json()) as RawPayload;
+    const { id: rawId, ...updates } = body;
 
-    if (!id) {
+    if (!rawId) {
       return NextResponse.json({ error: 'Se requiere el ID del gasto.' }, { status: 400 });
     }
+    const id = String(rawId);
 
     // Get expense details to verify group membership
     const expense = await repository.expenses.getById(id);
@@ -318,7 +321,61 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'No tienes permiso para modificar este gasto.' }, { status: 403 });
     }
 
-    const updatedExpense = await repository.expenses.update(id, updates);
+    // Check if this is a full update (has 'title' field) vs partial (splits, ticketUploaded)
+    const isFullUpdate = updates.title !== undefined;
+
+    if (isFullUpdate) {
+      // Validate required fields
+      const { title, amount, date, category, paidById, splitType, splits } = updates as unknown as RawPayload;
+      if (!title || amount === undefined || !date || !category || !paidById || !splitType || !splits) {
+        return NextResponse.json({ error: 'Faltan campos obligatorios.' }, { status: 400 });
+      }
+
+      // Normalise fields the same way as POST
+      const normalisedItems: ItemizedBillItem[] | undefined = Array.isArray(updates.items)
+        ? (updates.items as RawItem[])
+            .filter((it): it is RawItem => !!it && typeof it === 'object')
+            .map((it) => ({
+              name: String(it.name || ''),
+              amount: Number(it.amount) || 0,
+              userIds: Array.isArray(it.userIds) ? it.userIds.map(String) : [],
+              splitType: (typeof it.splitType === 'string' ? it.splitType : 'equal') as SplitType,
+              splitValues: it.splitValues && typeof it.splitValues === 'object'
+                ? Object.fromEntries(Object.entries(it.splitValues as Record<string, unknown>).map(([k, v]) => [k, String(v)]))
+                : undefined,
+            }))
+            .filter((it) => it.name.length > 0 && it.amount > 0)
+        : undefined;
+
+      const normalisedMultiPayers: MultiPayer[] | undefined = Array.isArray(updates.multiPayers)
+        ? (updates.multiPayers as RawMultiPayer[])
+            .filter((p): p is RawMultiPayer => !!p && typeof p === 'object')
+            .map((p) => ({ userId: String(p.userId), amount: Number(p.amount) || 0 }))
+            .filter((p) => p.amount > 0)
+        : undefined;
+
+      const normalisedTags: string[] | undefined = Array.isArray(updates.tags)
+        ? (updates.tags as unknown[]).map((t) => String(t).trim()).filter(Boolean)
+        : undefined;
+
+      // Assign normalised fields
+      (updates as any).title = String(title);
+      (updates as any).amount = parseFloat(String(amount));
+      (updates as any).date = new Date(String(date)).toISOString();
+      (updates as any).category = String(category);
+      (updates as any).paidById = String(paidById);
+      (updates as any).multiPayers = normalisedMultiPayers && normalisedMultiPayers.length > 0 ? normalisedMultiPayers : undefined;
+      (updates as any).splitType = splitType as SplitType;
+      (updates as any).isSettlement = !!updates.isSettlement;
+      (updates as any).notes = updates.notes ? String(updates.notes) : undefined;
+      (updates as any).tags = normalisedTags && normalisedTags.length > 0 ? normalisedTags : undefined;
+      (updates as any).paymentMethod = updates.paymentMethod ? String(updates.paymentMethod) : undefined;
+      (updates as any).items = normalisedItems && normalisedItems.length > 0 ? normalisedItems : undefined;
+      (updates as any).ticketUploaded = !!updates.ticketUploaded;
+      (updates as any).splits = splits;
+    }
+
+    const updatedExpense = await repository.expenses.update(id, updates as Record<string, unknown>);
     if (!updatedExpense) {
       return NextResponse.json({ error: 'No se pudo actualizar el gasto.' }, { status: 500 });
     }
