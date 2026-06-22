@@ -7,7 +7,7 @@ import {
   ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle,
   Search, SlidersHorizontal, FileSpreadsheet,
   Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
-  ChevronRight, Music, BookOpen, Laptop,
+  ChevronRight, Music, BookOpen, Laptop, Printer,
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import DebtSettlement from '@/components/DebtSettlement';
@@ -18,6 +18,7 @@ import PwaPrompt from '@/components/PwaPrompt';
 import NotificationCenter from '@/components/NotificationCenter';
 import CountdownWidget from '@/components/CountdownWidget';
 import BonoCulturalHub from '@/components/BonoCulturalHub';
+import PrintableInvoice from '@/components/PrintableInvoice';
 import type { Group, Expense, User } from '@/types';
 import styles from './group.module.css';
 
@@ -492,7 +493,8 @@ export default function GroupDetailPage({ params }: PageProps) {
 
   return (
     <div className={`${styles.groupDetail} animate-fade-in`}>
-      {/* Header */}
+      <div className="interactive-layout-wrapper">
+        {/* Header */}
       <header className={styles.header}>
         <button className={styles.backBtn} onClick={() => router.push('/')} title="Volver al inicio">
           <ArrowLeft size={20} />
@@ -503,7 +505,25 @@ export default function GroupDetailPage({ params }: PageProps) {
             {members.length} miembros • Cód: {group.inviteCode}
           </span>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={() => window.print()}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px',
+              borderRadius: 'var(--radius-sm)',
+              transition: 'var(--transition-smooth)'
+            }}
+            title="Exportar Factura (PDF)"
+          >
+            <Printer size={20} />
+          </button>
           <NotificationCenter />
         </div>
       </header>
@@ -1060,5 +1080,15 @@ export default function GroupDetailPage({ params }: PageProps) {
       {/* Toast */}
       {toastMsg && <div className={styles.toast} style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '12px 24px', borderRadius: 'var(--radius-full)', fontSize: '0.85rem', fontWeight: 500, boxShadow: '0 8px 30px rgba(0,0,0,0.15)', zIndex: 100 }}>{toastMsg}</div>}
     </div>
+
+    {/* Printable Invoice PDF */}
+    {group && members.length > 0 && (
+      <PrintableInvoice
+        group={group}
+        expenses={expenses}
+        members={members}
+      />
+    )}
+  </div>
   );
 }
