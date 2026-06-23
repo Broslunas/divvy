@@ -1,5 +1,3 @@
-export const unstable_instant = { prefetch: 'static' };
-
 import Link from 'next/link';
 import { Coins, Users, ArrowRight, PieChart, Bell, ChevronRight } from 'lucide-react';
 import Footer from '@/components/Footer';
