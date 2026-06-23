@@ -1,6 +1,15 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Footer() {
+  const [year, setYear] = useState(2026);
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer style={{
       width: '100%',
@@ -64,7 +73,7 @@ export default function Footer() {
           textAlign: 'center',
           margin: 0,
         }}>
-          &copy; {new Date().getFullYear()} Divvy. Todos los derechos reservados.
+          &copy; {year} Divvy. Todos los derechos reservados.
         </p>
         <p style={{
           fontSize: '0.75rem',

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive, QrCode } from 'lucide-react';
-import { calculateBalances } from '@/lib/settlement';
 import type { Group, User } from '@/types';
 import NotificationCenter from '@/components/NotificationCenter';
 import QRScannerModal from '@/components/QRScannerModal';
@@ -62,7 +61,7 @@ export default function Dashboard() {
   const [inviteCode, setInviteCode] = useState('');
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isBonoCreation, setIsBonoCreation] = useState(false);
-  const [bonoActivationDate, setBonoActivationDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bonoActivationDate, setBonoActivationDate] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
@@ -98,7 +97,7 @@ export default function Dashboard() {
       const userData = await userRes.json();
       setUser(userData);
 
-      let groupsData: Group[];
+      let groupsData: (Group & { userNetBalance?: number })[];
       let showingCached = false;
 
       if (!groupsRes.ok || groupsRes.status === 503) {
@@ -123,28 +122,19 @@ export default function Dashboard() {
       // Main dashboard screen ready
       setLoading(false);
 
-      // 2. Fetch detailed balances for all groups in background
+      // 2. Read pre-calculated balances from groups data, eliminating N sub-fetches
       setBalancesLoading(true);
       let owed = 0;
       let owe = 0;
 
-      await Promise.all(
-        groupsData.map(async (grp: Group) => {
-          const detailRes = await fetch(`/api/groups/${grp.id}`);
-          if (detailRes.ok) {
-            const { members, expenses } = await detailRes.json();
-            const memberIds = members.map((m: { id: string }) => m.id);
-            const { balances } = calculateBalances(memberIds, expenses);
-            
-            const myNet = balances[userData.id] || 0;
-            if (myNet > 0) {
-              owed += myNet;
-            } else if (myNet < 0) {
-              owe += Math.abs(myNet);
-            }
-          }
-        })
-      );
+      groupsData.forEach((grp) => {
+        const myNet = grp.userNetBalance || 0;
+        if (myNet > 0) {
+          owed += myNet;
+        } else if (myNet < 0) {
+          owe += Math.abs(myNet);
+        }
+      });
 
       setTotalOwedToMe(owed);
       setTotalIOwe(owe);
@@ -160,6 +150,7 @@ export default function Dashboard() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDashboardData();
+    setBonoActivationDate(new Date().toISOString().split('T')[0]);
   }, [fetchDashboardData]);
 
   useEffect(() => {

@@ -1,74 +1,13 @@
-'use client';
+export const unstable_instant = { prefetch: 'static' };
 
-import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import { Coins, Users, ArrowRight, PieChart, Bell, ChevronRight, HelpCircle, ChevronDown } from 'lucide-react';
+import { Coins, Users, ArrowRight, PieChart, Bell, ChevronRight } from 'lucide-react';
 import Footer from '@/components/Footer';
+import FAQSection from '@/components/FAQSection';
+import SimulatorWrapper from '@/components/SimulatorWrapper';
 import './landing.css';
 
-// Dynamically import the Simulator component to avoid hydration mismatches
-const DivvySimulator = dynamic(() => import('@/components/DivvySimulator'), { ssr: false });
-
-interface FAQItemProps {
-  question: string;
-  answer: string;
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-function FAQItem({ question, answer, isOpen, onToggle }: FAQItemProps) {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState<number | string>(0);
-
-  useEffect(() => {
-    if (isOpen) {
-      setHeight(contentRef.current?.scrollHeight || 'auto');
-    } else {
-      setHeight(0);
-    }
-  }, [isOpen]);
-
-  return (
-    <div className={`faq-item ${isOpen ? 'is-open' : ''}`}>
-      <button className="faq-question-btn" onClick={onToggle}>
-        <span>{question}</span>
-        <ChevronDown className="faq-toggle-icon" size={18} />
-      </button>
-      <div 
-        className="faq-answer-wrapper" 
-        style={{ height }}
-      >
-        <div ref={contentRef} className="faq-answer-content">
-          {answer}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function LandingPage() {
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-
-  const faqs = [
-    {
-      q: '¿Qué es Divvy?',
-      a: 'Divvy es una aplicación web moderna diseñada para simplificar la gestión y división de gastos en grupo. Ideal para viajes, cenas, compañeros de piso o proyectos compartidos. Registras los gastos y la app calcula de forma automática quién debe pagar a quién.',
-    },
-    {
-      q: '¿Cómo funciona la simplificación de deudas?',
-      a: 'El algoritmo inteligente de Divvy consolida los saldos de todos los miembros del grupo para reducir al mínimo el número de Bizums necesarios. Por ejemplo, si Ana le debe 10€ a Pablo y Pablo le debe 10€ a Dani, Divvy simplifica el flujo para que Ana le pague 10€ directamente a Dani, ahorrando una transacción innecesaria.',
-    },
-    {
-      q: '¿Puedo utilizar Divvy sin conexión a Internet?',
-      a: '¡Sí! Al ser una PWA (Progressive Web App), puedes instalar Divvy directamente en tu smartphone u ordenador y usarla sin conexión. Los gastos y deudas que introduzcas se guardarán en tu dispositivo y se sincronizarán con el servidor automáticamente en cuanto vuelvas a tener red.',
-    },
-    {
-      q: '¿Cómo invito a otros amigos a unirse a mi grupo?',
-      a: 'Crear y compartir un grupo es sumamente sencillo. Al crear un nuevo grupo, se genera un enlace de invitación único o código QR. Tus amigos solo tienen que escanear el código o acceder al enlace desde su móvil para unirse al instante, sin necesidad de instalaciones complejas.',
-    },
-  ];
-
   return (
     <div className="landing-wrapper">
       {/* Ambient Fluid Gradient Background */}
@@ -118,7 +57,7 @@ export default function LandingPage() {
 
         {/* Simulator Section */}
         <section id="simulator" className="simulator-section">
-          <DivvySimulator />
+          <SimulatorWrapper />
         </section>
 
         {/* Features Section */}
@@ -167,17 +106,7 @@ export default function LandingPage() {
           <span className="section-label">Preguntas Frecuentes</span>
           <h2 className="section-title">¿Tienes alguna duda?</h2>
           
-          <div className="faq-list">
-            {faqs.map((faq, index) => (
-              <FAQItem
-                key={index}
-                question={faq.q}
-                answer={faq.a}
-                isOpen={openFaqIndex === index}
-                onToggle={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
-              />
-            ))}
-          </div>
+          <FAQSection />
         </section>
 
         {/* Call to Action Banner */}
