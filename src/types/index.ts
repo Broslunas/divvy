@@ -73,3 +73,16 @@ export interface Expense {
   receiptImageUrl?: string; // URL of the uploaded receipt photo
   createdAt: string;
 }
+
+export interface Comment {
+  id: string;
+  expenseId: string;
+  groupId: string;
+  userId: string;
+  username: string;
+  avatarColor: string;
+  text: string;
+  imageUrl?: string;
+  createdAt: string;
+}
+

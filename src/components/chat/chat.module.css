@@ -1,0 +1,333 @@
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-subtle);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.chatHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.chatHeaderIcon {
+  color: var(--accent-primary);
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  max-height: 380px;
+  overflow-y: auto;
+  background-color: var(--bg-card);
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+.feed::-webkit-scrollbar {
+  width: 6px;
+}
+.feed::-webkit-scrollbar-track {
+  background: transparent;
+}
+.feed::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}
+.feed::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  gap: 8px;
+}
+
+.emptyText {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.messageRow {
+  display: flex;
+  gap: 10px;
+  max-width: 85%;
+  animation: fadeInSlideUp 0.3s ease-out forwards;
+}
+
+.messageRowCurrentUser {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.messageRowOther {
+  align-self: flex-start;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.messageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.senderName {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.messageRowCurrentUser .senderName {
+  text-align: right;
+}
+
+.bubble {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.bubbleCurrentUser {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  border-top-right-radius: 2px;
+}
+
+.bubbleOther {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-top-left-radius: 2px;
+}
+
+.bubbleImage {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-top: 6px;
+  display: block;
+  cursor: zoom-in;
+  transition: opacity 0.2s ease;
+}
+
+.bubbleImage:hover {
+  opacity: 0.9;
+}
+
+.messageTime {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.messageRowCurrentUser .messageTime {
+  text-align: right;
+}
+
+/* Quick templates */
+.templatesContainer {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-light);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.templatesContainer::-webkit-scrollbar {
+  height: 4px;
+}
+.templatesContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+.templatesContainer::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 2px;
+}
+
+.templateBtn {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.templateBtn:hover {
+  background-color: var(--border-light);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+/* Preview upload panel */
+.previewPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-light);
+  animation: fadeIn 0.2s ease;
+}
+
+.previewInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.previewThumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+.previewName {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.clearPreviewBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.clearPreviewBtn:hover {
+  background-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+/* Input area */
+.inputForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-light);
+}
+
+.inputField {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.4;
+  max-height: 100px;
+}
+
+.inputField:focus {
+  border-color: var(--accent-primary);
+}
+
+.actionBtn {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.actionBtn:hover {
+  background-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+.sendBtn {
+  background-color: var(--accent-primary);
+  border: none;
+  color: #ffffff;
+}
+
+.sendBtn:hover:not(:disabled) {
+  background-color: var(--accent-secondary);
+  transform: scale(1.05);
+}
+
+.sendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Keyframes */
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}

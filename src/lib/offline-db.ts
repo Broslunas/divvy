@@ -120,6 +120,19 @@ export const offlineDb = {
       db.close();
       return result;
     },
+
+    async saveComments(expenseId: string, data: unknown): Promise<void> {
+      const db = await openDB();
+      await put(db, CACHE_STORE, `comments:${expenseId}`, data);
+      db.close();
+    },
+
+    async getComments<T>(expenseId: string): Promise<T[] | null> {
+      const db = await openDB();
+      const result = await get<T[]>(db, CACHE_STORE, `comments:${expenseId}`);
+      db.close();
+      return result;
+    },
   },
 
   /** Sync queue: store mutations to replay when back online */

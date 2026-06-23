@@ -169,3 +169,29 @@ const PushSubscriptionSchema = new mongoose.Schema({
 export const MongoNotification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
 export const MongoPushSubscription = mongoose.models.PushSubscription || mongoose.model('PushSubscription', PushSubscriptionSchema);
 
+// Comment Schema
+const CommentSchema = new mongoose.Schema({
+  expenseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Expense', required: true },
+  groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true },
+  userId: { type: String, required: true },
+  username: { type: String, required: true },
+  avatarColor: { type: String, required: true },
+  text: { type: String, required: true },
+  imageUrl: { type: String, default: null },
+  createdAt: { type: Date, default: Date.now }
+}, {
+  toJSON: {
+    transform(doc, ret: any) {
+      ret.id = ret._id.toString();
+      ret.expenseId = ret.expenseId.toString();
+      ret.groupId = ret.groupId.toString();
+      ret.createdAt = ret.createdAt.toISOString();
+      delete ret._id;
+      delete ret.__v;
+    }
+  }
+});
+
+export const MongoComment = mongoose.models.Comment || mongoose.model('Comment', CommentSchema);
+
+

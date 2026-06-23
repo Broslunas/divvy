@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import PremiumLoader from '@/components/PremiumLoader';
+import ExpenseChat from '@/components/chat/ExpenseChat';
 import type { Group, Expense, User, ExpenseSplit, ItemizedBillItem, SplitType } from '@/types';
 import { getCurrencySymbol, computeItemShare } from '@/lib/utils';
 import { offlineDb } from '@/lib/offline-db';
@@ -563,6 +564,16 @@ export default function ExpenseDetailPage({ params }: PageProps) {
           </div>
         </section>
       )}
+
+      {/* --- Chat & Comentarios --- */}
+      <section className={styles.section}>
+        <ExpenseChat
+          expenseId={expense.id}
+          groupId={groupId}
+          members={members}
+          currentUser={currentUser}
+        />
+      </section>
 
       {/* Edit Modal */}
       {currentUser && expense && (

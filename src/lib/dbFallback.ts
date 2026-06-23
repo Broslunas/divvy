@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { User, Group, Expense } from '@/types';
+import type { User, Group, Expense, Comment } from '@/types';
 import type { Notification, PushSubscription } from '@/types/notification';
 
 const DB_DIR = path.join(process.cwd(), 'data', 'db');
@@ -94,5 +94,6 @@ export const fallbackDb = {
   groups: new JsonCollection<Group>('groups.json'),
   expenses: new JsonCollection<Expense>('expenses.json'),
   notifications: new JsonCollection<Notification>('notifications.json'),
-  pushSubscriptions: new JsonCollection<PushSubscription>('push_subscriptions.json')
+  pushSubscriptions: new JsonCollection<PushSubscription>('push_subscriptions.json'),
+  comments: new JsonCollection<Comment>('comments.json')
 };

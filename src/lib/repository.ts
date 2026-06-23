@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import { connectDB } from './db';
 import { fallbackDb } from './dbFallback';
-import { MongoUser, MongoGroup, MongoExpense, MongoNotification, MongoPushSubscription } from './models';
-import type { User, Group, Expense } from '@/types';
+import { MongoUser, MongoGroup, MongoExpense, MongoNotification, MongoPushSubscription, MongoComment } from './models';
+import type { User, Group, Expense, Comment } from '@/types';
 import type { Notification, PushSubscription } from '@/types/notification';
 
 // Helper to generate a random 8-character invite code
@@ -429,6 +429,58 @@ export const repository = {
           await fallbackDb.pushSubscriptions.delete(sub.id);
         }
         return true;
+      }
+    }
+  },
+  
+  comments: {
+    async getByExpenseId(expenseId: string): Promise<Comment[]> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const comments = await MongoComment.find({ expenseId }).sort({ createdAt: 1 });
+          return comments.map(c => c.toJSON() as Comment);
+        } catch (e) {
+          console.error('Error fetching comments from Mongo:', e);
+          return [];
+        }
+      } else {
+        const list = await fallbackDb.comments.findMany(c => c.expenseId === expenseId);
+        return list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      }
+    },
+
+    async create(comment: Omit<Comment, 'id' | 'createdAt'>): Promise<Comment> {
+      const isConnected = await connectDB();
+      const createdAt = new Date().toISOString();
+      if (isConnected) {
+        const newComment = await MongoComment.create({
+          ...comment,
+          createdAt
+        });
+        return newComment.toJSON() as Comment;
+      } else {
+        const id = generateId();
+        const newComment: Comment = {
+          id,
+          ...comment,
+          createdAt
+        };
+        return fallbackDb.comments.create(newComment);
+      }
+    },
+
+    async delete(id: string): Promise<boolean> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const result = await MongoComment.findByIdAndDelete(id);
+          return !!result;
+        } catch {
+          return false;
+        }
+      } else {
+        return fallbackDb.comments.delete(id);
       }
     }
   }
