@@ -82,14 +82,7 @@ export default function Dashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
-  // Edit Profile States
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editUsername, setEditUsername] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editAvatarColor, setEditAvatarColor] = useState('');
-  const [editPassword, setEditPassword] = useState('');
-  const [profileLoading, setProfileLoading] = useState(false);
 
   // Group Archiving States
   const [showArchived, setShowArchived] = useState(false);
@@ -171,44 +164,15 @@ export default function Dashboard() {
   }, [fetchDashboardData]);
 
   useEffect(() => {
-    if (user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEditUsername(user.username);
-      setEditEmail(user.email);
-      setEditAvatarColor(user.avatarColor);
-      setEditPassword('');
-    }
-  }, [user, isProfileModalOpen]);
+    const handleUserUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<User>;
+      setUser(customEvent.detail);
+    };
+    window.addEventListener('divvy-user-updated', handleUserUpdate);
+    return () => window.removeEventListener('divvy-user-updated', handleUserUpdate);
+  }, []);
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProfileLoading(true);
-    try {
-      const res = await fetch('/api/auth/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: editUsername,
-          email: editEmail,
-          avatarColor: editAvatarColor,
-          password: editPassword || undefined,
-        }),
-      });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Error al actualizar perfil');
-      }
-
-      showToast('¡Perfil actualizado con éxito!');
-      setIsProfileModalOpen(false);
-      await fetchDashboardData();
-    } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Error al actualizar perfil');
-    } finally {
-      setProfileLoading(false);
-    }
-  };
 
   const handleToggleArchiveGroup = async (e: React.MouseEvent, group: Group) => {
     e.stopPropagation();
@@ -237,15 +201,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.replace('/login');
-      router.refresh();
-    } catch {
-      showToast('Error al cerrar sesión.');
-    }
-  };
+
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -369,34 +325,7 @@ export default function Dashboard() {
           📦 Mostrando datos guardados localmente
         </div>
       )}
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.brand}>
-          <h1 className={styles.brandName}>Div<span>vy</span></h1>
-        </div>
-        <div className={styles.userMenu}>
-          <NotificationCenter />
-          <button
-            onClick={() => setIsProfileModalOpen(true)}
-            title="Editar perfil"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <div className={styles.avatar} style={{ backgroundColor: user?.avatarColor || 'var(--accent-primary)' }}>
-              {userInitial}
-            </div>
-          </button>
-          <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">
-            <LogOut size={20} />
-          </button>
-        </div>
-      </header>
+
 
       {/* Main Container */}
       <main className={styles.mainContent}>
@@ -589,125 +518,8 @@ export default function Dashboard() {
             )}
           </div>
         </section>
-
       </main>
-      </div>
-
-      {/* Profile Edit Modal */}
-      {isProfileModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => setIsProfileModalOpen(false)}
-        >
-          <div
-            style={{
-              width: '90%',
-              maxWidth: '400px',
-              backgroundColor: 'var(--bg-card)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '24px',
-              boxShadow: 'var(--shadow-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Editar Perfil</h2>
-            
-            <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Nombre de Usuario</label>
-                <input
-                  type="text"
-                  value={editUsername}
-                  onChange={(e) => setEditUsername(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', outline: 'none', fontSize: '0.85rem' }}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Correo Electrónico</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', outline: 'none', fontSize: '0.85rem' }}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Nueva Contraseña (Dejar en blanco para mantener)</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={editPassword}
-                  onChange={(e) => setEditPassword(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', outline: 'none', fontSize: '0.85rem' }}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Color de Avatar</label>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                  {['#C87A53', '#4A5D4E', '#5C768D', '#BCA374', '#8A7B9F', '#3A3F47'].map(color => (
-                     <button
-                       key={color}
-                       type="button"
-                       onClick={() => setEditAvatarColor(color)}
-                       style={{
-                         width: '32px',
-                         height: '32px',
-                         borderRadius: '50%',
-                         backgroundColor: color,
-                         border: editAvatarColor === color ? '2px solid var(--text-primary)' : '2px solid transparent',
-                         cursor: 'pointer',
-                         transform: editAvatarColor === color ? 'scale(1.1)' : 'scale(1)',
-                         transition: 'transform 0.2s ease',
-                       }}
-                     />
-                  ))}
-                </div>
-              </div>
-
-
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsProfileModalOpen(false)}
-                  style={{ flex: 1, padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  style={{ flex: 1, padding: '10px', borderRadius: 'var(--radius-sm)', border: 'none', backgroundColor: 'var(--accent-primary)', color: '#FFF', fontWeight: 700, cursor: 'pointer' }}
-                  disabled={profileLoading}
-                >
-                  {profileLoading ? 'Guardando...' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Toast */}
+    </div>
       {toastMsg && <div className={styles.toast}>{toastMsg}</div>}
 
       {/* Floating Action Button (FAB) */}

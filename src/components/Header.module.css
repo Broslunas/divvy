@@ -1,0 +1,498 @@
+/* Header component styling with premium glassmorphism and animations */
+
+.headerContainer {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  background-color: rgba(250, 249, 246, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-light);
+  transition: var(--transition-smooth);
+}
+
+/* Add a glowing subtle shadow when scrolled or for premium look */
+.headerContainer:hover {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+}
+
+.headerInner {
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+
+/* Brand area with animated logo */
+.brandArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leftPortal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.brandLogo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.logoIcon {
+  color: var(--accent-primary);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+}
+
+/* Keyframe animation for a subtle coin hover wobble */
+@keyframes coinWobble {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.12) rotate(-8deg); }
+  75% { transform: scale(1.12) rotate(12deg); }
+}
+
+.brandLogo:hover .logoIcon {
+  animation: coinWobble 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  filter: drop-shadow(0 2px 8px rgba(200, 122, 83, 0.3));
+}
+
+.brandLogo:active .logoIcon {
+  transform: scale(0.95);
+}
+
+.logoTextContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.logoText {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.logoText span {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #D4715A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logoSubtitle {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+/* Group detail layout (breadcrumbs style) */
+.groupSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-smooth);
+}
+
+.backBtn:hover {
+  color: var(--accent-primary);
+  background-color: var(--bg-secondary);
+  transform: translateX(-2px);
+}
+
+.separator {
+  width: 1px;
+  height: 20px;
+  background-color: var(--border-light);
+}
+
+.groupMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.groupTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.groupSubtitle {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* Navigation items / user menu controls */
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Action button items passed from group detail */
+.customActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionIconBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-smooth);
+}
+
+.actionIconBtn:hover {
+  color: var(--accent-primary);
+  background-color: var(--bg-secondary);
+  transform: translateY(-1px);
+}
+
+.actionIconBtn:active {
+  transform: translateY(0);
+}
+
+/* Access / login app buttons */
+.appBtn {
+  background-color: var(--accent-primary);
+  color: #FFFFFF;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.82rem;
+  box-shadow: 0 4px 12px rgba(200, 122, 83, 0.15);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.appBtn:hover {
+  background-color: var(--accent-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(200, 122, 83, 0.25);
+}
+
+.appBtn:active {
+  transform: translateY(0);
+}
+
+/* User avatar and profile toggle */
+.avatarWrapper {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  outline: none;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  border: 2px solid var(--bg-card);
+  box-shadow: var(--shadow-tactile);
+  transition: var(--transition-smooth);
+}
+
+.avatarWrapper:hover .avatar {
+  transform: scale(1.06);
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.avatarWrapper:active .avatar {
+  transform: scale(0.96);
+}
+
+/* Logout button */
+.logoutBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-smooth);
+}
+
+.logoutBtn:hover {
+  color: var(--danger);
+  background-color: var(--danger-light);
+  transform: scale(1.05);
+}
+
+.logoutBtn:active {
+  transform: scale(0.95);
+}
+
+/* Back Link (for auth pages) */
+.backLink {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: var(--transition-smooth);
+}
+
+.backLink:hover {
+  color: var(--accent-primary);
+  transform: translateX(-2px);
+}
+
+/* Toast message styles */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translate(-50%, 15px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* Modal styling */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(28, 28, 30, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalFadeIn 0.25s ease forwards;
+}
+
+.modalCard {
+  width: 90%;
+  max-width: 400px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modalTitle {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.inputGroup label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-primary);
+  font-size: 0.85rem;
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+.inputField:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+
+.colorPicker {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.colorOption {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.colorOption:hover {
+  transform: scale(1.08);
+}
+
+.colorOptionActive {
+  border-color: var(--text-primary);
+  transform: scale(1.12);
+}
+
+.modalButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.cancelBtn:hover {
+  background-color: #ECEAE5;
+}
+
+.saveBtn {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background-color: var(--accent-primary);
+  color: #FFF;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-tactile);
+}
+
+.saveBtn:hover {
+  background-color: var(--accent-primary-hover);
+}
+
+.saveBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Responsiveness adjustments for smaller devices */
+@media (max-width: 480px) {
+  .headerInner {
+    padding: 10px 14px;
+  }
+  .logoText {
+    font-size: 1.3rem;
+  }
+  .logoSubtitle {
+    display: none;
+  }
+  .groupTitle {
+    max-width: 100px;
+  }
+  .groupSubtitle {
+    max-width: 100px;
+  }
+}

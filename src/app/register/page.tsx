@@ -95,11 +95,6 @@ export default function RegisterPage() {
   return (
     <div className={`${styles.wrapper} page-transition-enter`}>
       <div className={styles.authCard}>
-        <div className={styles.logoArea}>
-          <Coins size={32} style={{ color: 'var(--accent-primary)' }} />
-          <h1 className={styles.logoText}>Div<span>vy</span></h1>
-        </div>
-
         <h2 className={styles.title}>Crea tu cuenta</h2>
         <p className={styles.subtitle}>Únete para empezar a gestionar tus gastos grupales.</p>
 

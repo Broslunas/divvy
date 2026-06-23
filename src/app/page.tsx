@@ -15,19 +15,7 @@ export default function LandingPage() {
         <div className="ambient-blob blob-accent" />
       </div>
 
-      {/* Header */}
-      <header className="landing-header">
-        <Link href="/" className="nav-logo">
-          <Coins size={28} style={{ color: 'var(--accent-primary)' }} />
-          <span className="logo-text">
-            Div<span>vy</span>
-          </span>
-        </Link>
-        <Link href="/app" className="app-btn-nav">
-          Acceder a la App
-          <ArrowRight size={16} />
-        </Link>
-      </header>
+
 
       {/* Main Content */}
       <main className="landing-content animate-fade-in">

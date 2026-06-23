@@ -235,10 +235,6 @@ export default function CountdownWidget({ targetDate, groupName }: CountdownWidg
               Segs
             </span>
           </div>
-
-          <div style={{ marginLeft: '6px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            restantes para el evento 🗺️
-          </div>
         </div>
       )}
     </div>

@@ -24,38 +24,6 @@ export default function CookiesPage() {
         flexDirection: 'column',
         gap: '24px',
       }}>
-        {/* Navigation Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-        }}>
-          <Link href="/login" style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            color: 'var(--accent-primary)',
-            textDecoration: 'none',
-          }}>
-            <ChevronLeft size={16} />
-            Volver a la App
-          </Link>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}>
-            <Coins size={24} style={{ color: 'var(--accent-primary)' }} />
-            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-              Div<span style={{ color: 'var(--accent-primary)' }}>vy</span>
-            </span>
-          </div>
-        </div>
-
         {/* Content Card */}
         <div style={{
           backgroundColor: 'var(--bg-card)',

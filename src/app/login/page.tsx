@@ -77,11 +77,6 @@ export default function LoginPage() {
   return (
     <div className={`${styles.wrapper} page-transition-enter`}>
       <div className={styles.authCard}>
-        <div className={styles.logoArea}>
-          <Coins size={32} style={{ color: 'var(--accent-primary)' }} />
-          <h1 className={styles.logoText}>Div<span>vy</span></h1>
-        </div>
-
         <h2 className={styles.title}>Te damos la bienvenida</h2>
         <p className={styles.subtitle}>Inicia sesión para gestionar tus gastos grupales.</p>
 

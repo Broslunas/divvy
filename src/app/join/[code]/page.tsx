@@ -123,13 +123,7 @@ export default function JoinGroupPage({ params }: JoinPageProps) {
         alignItems: 'center',
         gap: '20px'
       }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Coins size={32} style={{ color: 'var(--accent-primary)' }} />
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
-            Div<span style={{ color: 'var(--accent-primary)' }}>vy</span>
-          </h1>
-        </div>
+
 
         {status === 'checking' && (
           <PremiumLoader text="Verificando invitación" fullscreen={false} />

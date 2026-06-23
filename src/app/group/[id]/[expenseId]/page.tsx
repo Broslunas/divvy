@@ -3,6 +3,7 @@
 import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import {
   ArrowLeft, Trash2, Loader2, CheckSquare, Square,
   Utensils, Car, Home, ShoppingBag, Ticket, Package,
@@ -88,6 +89,11 @@ export default function ExpenseDetailPage({ params }: PageProps) {
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [portalMounted, setPortalMounted] = useState(false);
+
+  useEffect(() => {
+    setPortalMounted(true);
+  }, []);
 
   const currencySymbol = getCurrencySymbol(group?.currency);
 
@@ -266,11 +272,19 @@ export default function ExpenseDetailPage({ params }: PageProps) {
   if (error && !expense) {
     return (
       <div className={styles.page}>
-        <header className={styles.header}>
-          <Link href={`/group/${groupId}`} className={styles.backBtn}>
-            <ArrowLeft size={16} /> Volver al grupo
-          </Link>
-        </header>
+        {portalMounted && createPortal(
+          <>
+            <Link href={`/group/${groupId}`} className={styles.backBtn} title="Volver al grupo">
+              <ArrowLeft size={20} />
+            </Link>
+            <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-light)', margin: '0 4px' }} />
+            <div className={styles.headerInfo}>
+              <span className={styles.groupName} style={{ display: 'block', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>Error</span>
+              <span className={styles.memberSummary} style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Detalle de gasto</span>
+            </div>
+          </>,
+          document.getElementById('header-left-portal')!
+        )}
         <div className={styles.errorState}>
           <AlertCircle size={28} />
           <p>{error}</p>
@@ -307,10 +321,24 @@ export default function ExpenseDetailPage({ params }: PageProps) {
 
   return (
     <div className={`${styles.page} page-transition-enter`}>
-      <header className={styles.header}>
-        <Link href={`/group/${groupId}`} className={styles.backBtn}>
-          <ArrowLeft size={16} /> Volver al grupo
-        </Link>
+      {/* Render expense detail header into the global Header portals */}
+      {portalMounted && createPortal(
+        <>
+          <Link href={`/group/${groupId}`} className={styles.backBtn} title="Volver al grupo">
+            <ArrowLeft size={20} />
+          </Link>
+          <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-light)', margin: '0 4px' }} />
+          <div className={styles.headerInfo}>
+            <span className={styles.groupName} style={{ display: 'block', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>{group.name}</span>
+            <span className={styles.memberSummary} style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
+              Detalle de gasto
+            </span>
+          </div>
+        </>,
+        document.getElementById('header-left-portal')!
+      )}
+
+      {portalMounted && createPortal(
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           {canDelete && !expense.isSettlement && (
             <button
@@ -333,8 +361,9 @@ export default function ExpenseDetailPage({ params }: PageProps) {
               <span>Eliminar</span>
             </button>
           )}
-        </div>
-      </header>
+        </div>,
+        document.getElementById('header-actions-portal')!
+      )}
 
       {error && (
         <div className={styles.errorBanner}>

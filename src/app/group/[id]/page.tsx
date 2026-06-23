@@ -3,6 +3,7 @@
 import { useState, useEffect, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import {
   ArrowLeft, Copy, Plus, Trash2, Loader2, HelpCircle,
   Search, SlidersHorizontal, FileSpreadsheet,
@@ -105,6 +106,11 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [copied, setCopied] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [portalMounted, setPortalMounted] = useState(false);
+
+  useEffect(() => {
+    setPortalMounted(true);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -772,18 +778,25 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
             📦 Mostrando datos guardados localmente
           </div>
         )}
-        {/* Header */}
-        <header className={styles.header}>
-          <button className={styles.backBtn} onClick={() => router.push('/app')} title="Volver al inicio">
-            <ArrowLeft size={20} />
-          </button>
-          <div className={styles.headerInfo}>
-            <span className={styles.groupName}>{group.name}</span>
-            <span className={styles.memberSummary}>
-              {members.length} miembros • Cód: {group.inviteCode}
-            </span>
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Render group header details into the global Header portals */}
+        {portalMounted && createPortal(
+          <>
+            <button className={styles.backBtn} onClick={() => router.push('/app')} title="Volver al inicio">
+              <ArrowLeft size={20} />
+            </button>
+            <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-light)', margin: '0 4px' }} />
+            <div className={styles.headerInfo}>
+              <span className={styles.groupName} style={{ display: 'block', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>{group.name}</span>
+              <span className={styles.memberSummary} style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
+                {members.length} miembros • Cód: {group.inviteCode}
+              </span>
+            </div>
+          </>,
+          document.getElementById('header-left-portal')!
+        )}
+
+        {portalMounted && createPortal(
+          <>
             <button
               onClick={() => window.print()}
               style={{
@@ -820,9 +833,9 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
             >
               <QrCode size={20} />
             </button>
-            <NotificationCenter />
-          </div>
-        </header>
+          </>,
+          document.getElementById('header-actions-portal')!
+        )}
 
       {/* Main Content */}
       <main className={styles.mainContent}>
