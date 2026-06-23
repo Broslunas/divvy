@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive, QrCode } from 'lucide-react';
+import { LogOut, Plus, UserPlus, ChevronRight, Users, Loader2, Archive, QrCode, TrendingUp, TrendingDown, Check, Calendar, Ticket } from 'lucide-react';
 import type { Group, User } from '@/types';
 import NotificationCenter from '@/components/NotificationCenter';
 import QRScannerModal from '@/components/QRScannerModal';
@@ -38,10 +38,27 @@ function getMiniCountdown(targetStr: string): string {
   }
 }
 
+function getGroupGradient(name: string): string {
+  const gradients = [
+    'linear-gradient(135deg, #F3A17E 0%, #D4715A 100%)', // Terracota
+    'linear-gradient(135deg, #7A9B76 0%, #4A5D4E 100%)', // Sage
+    'linear-gradient(135deg, #8FAFC4 0%, #5C768D 100%)', // Steel Blue
+    'linear-gradient(135deg, #E6C587 0%, #BCA374 100%)', // Sand
+    'linear-gradient(135deg, #B1A2C6 0%, #8A7B9F 100%)', // Lilac
+    'linear-gradient(135deg, #748A9C 0%, #3A3F47 100%)', // Charcoal
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % gradients.length;
+  return gradients[index];
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [groups, setGroups] = useState<Group[] | null>(null);
+  const [groups, setGroups] = useState<(Group & { userNetBalance?: number })[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [balancesLoading, setBalancesLoading] = useState(true);
   
@@ -447,96 +464,120 @@ export default function Dashboard() {
                     key={group.id}
                     className={styles.groupCard}
                     onClick={() => router.push(`/group/${group.id}`)}
-                    style={{ position: 'relative', gap: '14px' }}
                   >
-                    {group.coverImageUrl && (
-                      <div style={{
-                        width: '56px',
-                        height: '40px',
-                        borderRadius: 'var(--radius-sm)',
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                        boxShadow: 'var(--shadow-tactile)',
-                      }}>
+                    {/* Thumbnail / Cover */}
+                    <div className={styles.groupThumbnailContainer}>
+                      {group.coverImageUrl ? (
                         <img
                           src={group.coverImageUrl}
-                          alt=""
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          alt={group.name}
+                          className={styles.groupThumbnail}
                         />
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, minWidth: 0 }}>
-                      <div className={styles.groupInfo}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span className={styles.groupName}>{group.name}</span>
-                        {group.isBonoCultural && (
-                          <span 
-                            style={{ 
-                              fontSize: '0.62rem', 
-                              backgroundColor: 'rgba(230,175,46,0.12)', 
-                              color: '#D49500', 
-                              border: '1px solid rgba(230,175,46,0.25)', 
-                              padding: '2px 6px', 
-                              borderRadius: '4px', 
-                              fontWeight: 800,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px'
-                            }}
-                          >
-                            🎟️ Bono Cultural
-                          </span>
-                        )}
-                      </div>
-                      {group.description && <span className={styles.groupDesc}>{group.description}</span>}
-                      <div className={styles.groupMeta}>
-                        <span className={styles.memberBadge}>
-                          <Users size={12} /> {group.members.length} {group.members.length === 1 ? 'miembro' : 'miembros'}
-                        </span>
-                        <span>• Cód: {group.inviteCode}</span>
-                      </div>
-                      {group.targetDate && (
+                      ) : (
                         <div
-                          style={{
-                            marginTop: '8px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            backgroundColor: 'rgba(200, 122, 83, 0.05)',
-                            border: '1px dashed rgba(200, 122, 83, 0.2)',
-                            borderRadius: 'var(--radius-sm)',
-                            padding: '3px 8px',
-                            fontSize: '0.7rem',
-                            fontWeight: 700,
-                            color: 'var(--accent-primary)',
-                            width: 'fit-content'
-                          }}
+                          className={styles.groupThumbnailFallback}
+                          style={{ background: getGroupGradient(group.name) }}
                         >
-                          <span style={{ animation: 'pulseBadge 2s infinite', fontSize: '0.8rem' }}>⏳</span>
-                          <span>{getMiniCountdown(group.targetDate)}</span>
+                          {group.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <button
-                        onClick={(e) => handleToggleArchiveGroup(e, group)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          borderRadius: 'var(--radius-sm)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                        title={group.archivedBy?.includes(user?.id || '') ? "Desarchivar grupo" : "Archivar grupo"}
-                      >
-                        <Archive size={16} style={{ color: group.archivedBy?.includes(user?.id || '') ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
-                      </button>
-                      <ChevronRight className={styles.chevron} size={20} />
+
+                    {/* Main Content Area */}
+                    <div className={styles.groupContent}>
+                      <div className={styles.groupDetails}>
+                        <div className={styles.groupTitleRow}>
+                          <span className={styles.groupName}>{group.name}</span>
+                          {group.isBonoCultural && (
+                            <span className={styles.bonoCulturalBadge}>
+                              <Ticket size={10} />
+                              <span>Bono Cultural</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {group.description && <span className={styles.groupDesc}>{group.description}</span>}
+
+                        <div className={styles.groupMeta}>
+                          <span className={styles.memberBadge}>
+                            <Users size={11} />
+                            <span>{group.members.length} {group.members.length === 1 ? 'miembro' : 'miembros'}</span>
+                          </span>
+                          
+                          <span className={styles.inviteCodeBadge}>
+                            Cód: {group.inviteCode}
+                          </span>
+
+                          {group.targetDate && (
+                            <span className={styles.targetCountdown}>
+                              <span className={styles.pulseDot} />
+                              <span>{getMiniCountdown(group.targetDate)}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Widget: Balance & Action */}
+                      <div className={styles.groupRightSection}>
+                        {/* Net Balance Badge */}
+                        {(() => {
+                          const myNet = group.userNetBalance || 0;
+                          if (myNet > 0) {
+                            return (
+                              <div className={`${styles.groupBalanceContainer} ${styles.balancePositive}`}>
+                                <span className={styles.groupBalanceLabel}>Te deben</span>
+                                <span className={styles.groupBalanceValue}>
+                                  <TrendingUp size={12} className={styles.balanceIcon} />
+                                  {myNet.toFixed(2)}€
+                                </span>
+                              </div>
+                            );
+                          } else if (myNet < 0) {
+                            return (
+                              <div className={`${styles.groupBalanceContainer} ${styles.balanceNegative}`}>
+                                <span className={styles.groupBalanceLabel}>Debes</span>
+                                <span className={styles.groupBalanceValue}>
+                                  <TrendingDown size={12} className={styles.balanceIcon} />
+                                  {Math.abs(myNet).toFixed(2)}€
+                                </span>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className={`${styles.groupBalanceContainer} ${styles.balanceZero}`}>
+                                <span className={styles.groupBalanceLabel}>Saldo</span>
+                                <span className={styles.groupBalanceValue}>
+                                  <Check size={12} className={styles.balanceIcon} />
+                                  Al día
+                                </span>
+                              </div>
+                            );
+                          }
+                        })()}
+
+                        {/* Actions (Archive & Chevron) */}
+                        <div className={styles.groupActions}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleArchiveGroup(e, group);
+                            }}
+                            className={styles.archiveBtn}
+                            title={group.archivedBy?.includes(user?.id || '') ? "Desarchivar grupo" : "Archivar grupo"}
+                          >
+                            <Archive 
+                              size={15} 
+                              style={{ 
+                                color: group.archivedBy?.includes(user?.id || '') 
+                                  ? 'var(--accent-primary)' 
+                                  : 'var(--text-muted)' 
+                              }} 
+                            />
+                          </button>
+                          <ChevronRight className={styles.chevron} size={18} />
+                        </div>
+                      </div>
                     </div>
-                  </div>
                   </div>
                 ))
             ) : (
