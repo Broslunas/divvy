@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, CheckCircle, Coins, Users } from 'lucide-react';
+import PremiumLoader from '@/components/PremiumLoader';
 
 interface JoinPageProps {
   params: Promise<{ code: string }>;
@@ -100,7 +101,7 @@ export default function JoinGroupPage({ params }: JoinPageProps) {
   };
 
   return (
-    <div style={{
+    <div className="page-transition-enter" style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -131,13 +132,7 @@ export default function JoinGroupPage({ params }: JoinPageProps) {
         </div>
 
         {status === 'checking' && (
-          <>
-            <Loader2 className="animate-spin" size={36} style={{ color: 'var(--accent-primary)' }} />
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Verificando invitación...</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Cargando los detalles del grupo. Por favor, espera.
-            </p>
-          </>
+          <PremiumLoader text="Verificando invitación" fullscreen={false} />
         )}
 
         {status === 'ready' && groupDetails && (
@@ -181,13 +176,7 @@ export default function JoinGroupPage({ params }: JoinPageProps) {
         )}
 
         {status === 'joining' && (
-          <>
-            <Loader2 className="animate-spin" size={36} style={{ color: 'var(--accent-primary)' }} />
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Uniéndote al grupo...</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Registrando tu acceso en el grupo. Ya casi estamos.
-            </p>
-          </>
+          <PremiumLoader text="Uniéndote al grupo" fullscreen={false} />
         )}
 
         {status === 'success' && groupDetails && (

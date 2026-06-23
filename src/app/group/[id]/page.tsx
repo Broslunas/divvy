@@ -22,6 +22,7 @@ import CountdownWidget from '@/components/CountdownWidget';
 import BonoCulturalHub from '@/components/BonoCulturalHub';
 import PrintableInvoice from '@/components/PrintableInvoice';
 import type { Group, Expense, User } from '@/types';
+import PremiumLoader from '@/components/PremiumLoader';
 import { offlineDb } from '@/lib/offline-db';
 import { useOfflineSync } from '@/lib/useOfflineSync';
 import styles from './group.module.css';
@@ -112,15 +113,17 @@ export default function GroupDetailPage({ params }: PageProps) {
 
   const fetchGroupDetails = useCallback(async () => {
     try {
-      const userRes = await fetch('/api/auth/me');
+      const [userRes, detailRes] = await Promise.all([
+        fetch('/api/auth/me'),
+        fetch(`/api/groups/${groupId}`)
+      ]);
+
       if (!userRes.ok) {
         router.replace('/login');
         return;
       }
       const userData = await userRes.json();
       setCurrentUser(userData);
-
-      const detailRes = await fetch(`/api/groups/${groupId}`);
 
       let data: { group: Group; members: Omit<User, 'passwordHash'>[]; expenses: Expense[] };
 
@@ -744,12 +747,7 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
   });
 
   if (loading || !group) {
-    return (
-      <div className={styles.groupDetail} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '12px' }}>
-        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--accent-primary)' }} />
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Cargando grupo...</span>
-      </div>
-    );
+    return <PremiumLoader text="Cargando detalles del grupo" />;
   }
 
   const totalSpent = expenses
@@ -758,7 +756,7 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
 
   return (
     <>
-      <div className={`${styles.groupDetail} animate-fade-in`}>
+      <div className={`${styles.groupDetail} page-transition-enter`}>
         <div className="interactive-layout-wrapper">
         {/* Cached data notice */}
         {isShowingCachedData && (

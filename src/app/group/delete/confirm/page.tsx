@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
+import PremiumLoader from '@/components/PremiumLoader';
 
 function DeleteConfirmContent() {
   const router = useRouter();
@@ -62,7 +63,7 @@ function DeleteConfirmContent() {
   }, [token, router]);
 
   return (
-    <div style={{
+    <div className="page-transition-enter" style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -103,7 +104,7 @@ function DeleteConfirmContent() {
               ? 'var(--success)'
               : 'var(--danger)',
         }}>
-          {status === 'loading' && <Loader2 className="animate-spin" size={32} />}
+          {status === 'loading' && <PremiumLoader text="Eliminando" fullscreen={false} />}
           {status === 'success' && <CheckCircle2 size={32} />}
           {status === 'error' && <AlertCircle size={32} />}
         </div>
@@ -186,18 +187,7 @@ function DeleteConfirmContent() {
 
 export default function DeleteConfirmPage() {
   return (
-    <Suspense fallback={
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        backgroundColor: 'var(--bg-primary)',
-        color: 'var(--accent-primary)'
-      }}>
-        <Loader2 className="animate-spin" size={40} />
-      </div>
-    }>
+    <Suspense fallback={<PremiumLoader text="Procesando enlace" />}>
       <DeleteConfirmContent />
     </Suspense>
   );

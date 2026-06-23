@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Coins, Loader2 } from 'lucide-react';
 import styles from './login.module.css';
 import Footer from '@/components/Footer';
+import PremiumLoader from '@/components/PremiumLoader';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -70,15 +71,11 @@ export default function LoginPage() {
   };
 
   if (checkAuth) {
-    return (
-      <div className={styles.wrapper}>
-        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--accent-primary)' }} />
-      </div>
-    );
+    return <PremiumLoader text="Verificando sesión" />;
   }
 
   return (
-    <div className={styles.wrapper}>
+    <div className={`${styles.wrapper} page-transition-enter`}>
       <div className={styles.authCard}>
         <div className={styles.logoArea}>
           <Coins size={32} style={{ color: 'var(--accent-primary)' }} />

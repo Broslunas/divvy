@@ -10,6 +10,7 @@ import {
   Check, AlertCircle, Equal, DollarSign, Percent, Users2, ImageIcon, Pencil,
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
+import PremiumLoader from '@/components/PremiumLoader';
 import type { Group, Expense, User, ExpenseSplit, ItemizedBillItem, SplitType } from '@/types';
 import { getCurrencySymbol, computeItemShare } from '@/lib/utils';
 import { offlineDb } from '@/lib/offline-db';
@@ -93,7 +94,11 @@ export default function ExpenseDetailPage({ params }: PageProps) {
     setLoading(true);
     setError('');
     try {
-      const userRes = await fetch('/api/auth/me');
+      const [userRes, groupRes] = await Promise.all([
+        fetch('/api/auth/me'),
+        fetch(`/api/groups/${groupId}`)
+      ]);
+
       if (!userRes.ok) {
         router.replace('/login');
         return;
@@ -101,7 +106,6 @@ export default function ExpenseDetailPage({ params }: PageProps) {
       const userData = await userRes.json();
       setCurrentUser(userData);
 
-      const groupRes = await fetch(`/api/groups/${groupId}`);
       if (!groupRes.ok) {
         const data = await groupRes.json();
         throw new Error(data.error || 'No se pudo cargar el grupo.');
@@ -255,14 +259,7 @@ export default function ExpenseDetailPage({ params }: PageProps) {
 
   // --- Render ---
   if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.loadingState}>
-          <Loader2 size={24} className={styles.spin} />
-          <span>Cargando gasto...</span>
-        </div>
-      </div>
-    );
+    return <PremiumLoader text="Cargando detalles del gasto" />;
   }
 
   if (error && !expense) {
@@ -308,7 +305,7 @@ export default function ExpenseDetailPage({ params }: PageProps) {
   const showSplitDetail = !expense.isSettlement;
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} page-transition-enter`}>
       <header className={styles.header}>
         <Link href={`/group/${groupId}`} className={styles.backBtn}>
           <ArrowLeft size={16} /> Volver al grupo

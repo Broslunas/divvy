@@ -7,6 +7,7 @@ import { calculateBalances } from '@/lib/settlement';
 import type { Group, User } from '@/types';
 import NotificationCenter from '@/components/NotificationCenter';
 import QRScannerModal from '@/components/QRScannerModal';
+import PremiumLoader from '@/components/PremiumLoader';
 import { offlineDb } from '@/lib/offline-db';
 import styles from './page.module.css';
 
@@ -43,6 +44,7 @@ export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [groups, setGroups] = useState<Group[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [balancesLoading, setBalancesLoading] = useState(true);
   
   // Total balances calculated across all groups
   const [totalOwedToMe, setTotalOwedToMe] = useState(0);
@@ -83,8 +85,12 @@ export default function Dashboard() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      // 1. Verify Authentication
-      const userRes = await fetch('/api/auth/me');
+      // 1. Verify Authentication & Fetch Groups in Parallel
+      const [userRes, groupsRes] = await Promise.all([
+        fetch('/api/auth/me'),
+        fetch('/api/groups')
+      ]);
+
       if (!userRes.ok) {
         router.replace('/login');
         return;
@@ -92,16 +98,15 @@ export default function Dashboard() {
       const userData = await userRes.json();
       setUser(userData);
 
-      // 2. Fetch Groups (Network-First — SW serves cache when offline)
-      const groupsRes = await fetch('/api/groups');
       let groupsData: Group[];
+      let showingCached = false;
 
       if (!groupsRes.ok || groupsRes.status === 503) {
         // Offline or server error: try IndexedDB cache
         const cached = await offlineDb.cache.getGroups<Group>();
         if (cached) {
           groupsData = cached;
-          setIsShowingCachedData(true);
+          showingCached = true;
         } else {
           throw new Error('Error al cargar grupos');
         }
@@ -109,12 +114,17 @@ export default function Dashboard() {
         groupsData = await groupsRes.json();
         // Persist fresh data to IndexedDB for future offline use
         await offlineDb.cache.saveGroups(groupsData);
-        setIsShowingCachedData(false);
+        showingCached = false;
       }
 
       setGroups(groupsData);
+      setIsShowingCachedData(showingCached);
 
-      // 3. Fetch detailed balances for all groups
+      // Main dashboard screen ready
+      setLoading(false);
+
+      // 2. Fetch detailed balances for all groups in background
+      setBalancesLoading(true);
       let owed = 0;
       let owe = 0;
 
@@ -143,6 +153,7 @@ export default function Dashboard() {
       showToast('Error de conexión al cargar datos.');
     } finally {
       setLoading(false);
+      setBalancesLoading(false);
     }
   }, [router]);
 
@@ -328,18 +339,14 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.dashboard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <Loader2 className="animate-spin" size={32} style={{ color: 'var(--accent-primary)' }} />
-      </div>
-    );
+    return <PremiumLoader text="Cargando tu cuenta" />;
   }
 
   const userInitial = user?.username ? user.username.charAt(0) : '?';
 
   return (
     <>
-      <div className={`${styles.dashboard} animate-fade-in`}>
+      <div className={`${styles.dashboard} page-transition-enter`}>
       {/* Cached data notice */}
       {isShowingCachedData && (
         <div style={{
@@ -395,15 +402,23 @@ export default function Dashboard() {
         <section className={styles.balanceBoard}>
           <div className={styles.balanceCard}>
             <span className={styles.balanceLabel}>Te deben</span>
-            <span className={`${styles.balanceValue} ${totalOwedToMe > 0 ? styles.positive : ''}`}>
-              {totalOwedToMe.toFixed(2)}€
-            </span>
+            {balancesLoading ? (
+              <span className="shimmer" style={{ display: 'block', width: '80px', height: '28px', borderRadius: 'var(--radius-sm)', marginTop: '8px' }} />
+            ) : (
+              <span className={`${styles.balanceValue} ${totalOwedToMe > 0 ? styles.positive : ''}`}>
+                {totalOwedToMe.toFixed(2)}€
+              </span>
+            )}
           </div>
           <div className={styles.balanceCard}>
             <span className={styles.balanceLabel}>Debes</span>
-            <span className={`${styles.balanceValue} ${totalIOwe > 0 ? styles.negative : ''}`}>
-              {totalIOwe.toFixed(2)}€
-            </span>
+            {balancesLoading ? (
+              <span className="shimmer" style={{ display: 'block', width: '80px', height: '28px', borderRadius: 'var(--radius-sm)', marginTop: '8px' }} />
+            ) : (
+              <span className={`${styles.balanceValue} ${totalIOwe > 0 ? styles.negative : ''}`}>
+                {totalIOwe.toFixed(2)}€
+              </span>
+            )}
           </div>
         </section>
 
