@@ -2,7 +2,8 @@ import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter,
   AlignRight, AlignJustify, List, ListOrdered, CheckSquare, Link,
-  Image, Table, Sparkles, FileText, Download, Undo2, Redo2, Quote, Highlighter, ChevronDown, Scissors
+  Image, Table, Sparkles, FileText, Download, Undo2, Redo2, Quote, Highlighter, ChevronDown, Scissors,
+  Code
 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -13,6 +14,7 @@ interface DocumentToolbarProps {
   onOpenExpenseLinker: () => void;
   onExportPDF: () => void;
   onUploadImage: (file: File) => Promise<void>;
+  onOpenInsertHtml: () => void;
 }
 
 export default function DocumentToolbar({
@@ -21,7 +23,8 @@ export default function DocumentToolbar({
   onOpenAI,
   onOpenExpenseLinker,
   onExportPDF,
-  onUploadImage
+  onUploadImage,
+  onOpenInsertHtml
 }: DocumentToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -281,6 +284,13 @@ export default function DocumentToolbar({
           title="Salto de página (A4)"
         >
           <Scissors size={15} />
+        </button>
+        <button
+          onClick={onOpenInsertHtml}
+          className="toolbar-btn"
+          title="Insertar código HTML"
+        >
+          <Code size={15} />
         </button>
       </div>
 

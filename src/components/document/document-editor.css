@@ -698,4 +698,59 @@
   }
 }
 
+/* HTML Source Code Editor & Mode Toggle */
+.document-view-toggle {
+  display: flex;
+  background-color: var(--bg-secondary);
+  padding: 2px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  gap: 2px;
+}
+
+.document-view-toggle-btn {
+  padding: 4px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  background-color: transparent;
+  color: var(--text-secondary);
+  transition: var(--transition-smooth);
+}
+
+.document-view-toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.document-view-toggle-btn.active {
+  background-color: var(--accent-primary);
+  color: white;
+  box-shadow: var(--shadow-subtle);
+}
+
+.document-html-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  outline: none;
+  font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  padding: 20px;
+  resize: vertical;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: border-color var(--transition-smooth);
+}
+
+.document-html-textarea:focus {
+  border-color: var(--accent-primary);
+}
+
+
 

@@ -18,7 +18,7 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { Typography } from '@tiptap/extension-typography';
-import { CloudLightning, FileText, Check, AlertCircle, Edit2, Sparkles } from 'lucide-react';
+import { CloudLightning, FileText, Check, AlertCircle, Edit2, Sparkles, Code, X } from 'lucide-react';
 
 import { ExpenseBlock } from './extensions/expense-node';
 import { PageBreak } from './extensions/page-break';
@@ -52,6 +52,11 @@ export default function GroupDocument({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
   const [isEditing, setIsEditing] = useState(isEditMode);
 
+  // HTML Editor states
+  const [viewMode, setViewMode] = useState<'visual' | 'html'>('visual');
+  const [htmlText, setHtmlText] = useState('');
+  const [showHtmlModal, setShowHtmlModal] = useState(false);
+  const [insertedHtml, setInsertedHtml] = useState('');
   
   // Modal states
   const [showTemplates, setShowTemplates] = useState(false);
@@ -125,8 +130,11 @@ export default function GroupDocument({
         setDocumentId(data.id);
         setTitle(data.title || `Documento de viaje`);
         
-        if (editor && data.content) {
-          editor.commands.setContent(data.content);
+        if (data.content) {
+          setHtmlText(data.content);
+          if (editor) {
+            editor.commands.setContent(data.content);
+          }
         }
         setSaveStatus('saved');
       } catch (e) {
@@ -178,12 +186,30 @@ export default function GroupDocument({
     [saveDocument]
   );
 
+  // View Mode conmutator handler
+  const handleToggleViewMode = (mode: 'visual' | 'html') => {
+    if (mode === 'html' && editor) {
+      setHtmlText(editor.getHTML());
+    } else if (mode === 'visual' && editor) {
+      editor.commands.setContent(htmlText, { emitUpdate: false });
+    }
+    setViewMode(mode);
+  };
+
+  // HTML manual typing handler
+  const handleHtmlTextChange = (val: string) => {
+    setHtmlText(val);
+    setSaveStatus('saving');
+    triggerAutosave(title, val);
+  };
+
   // Title change handler
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
     setSaveStatus('saving');
     if (editor) {
-      triggerAutosave(newTitle, editor.getHTML());
+      const contentToSave = viewMode === 'html' ? htmlText : editor.getHTML();
+      triggerAutosave(newTitle, contentToSave);
     }
   };
 
@@ -275,7 +301,8 @@ export default function GroupDocument({
 
   const handleStopEditing = () => {
     if (editor) {
-      saveDocument(title, editor.getHTML());
+      const finalContent = viewMode === 'html' ? htmlText : editor.getHTML();
+      saveDocument(title, finalContent);
     }
     router.push(`/group/${groupId}?tab=notas`);
   };
@@ -334,6 +361,21 @@ export default function GroupDocument({
             className="document-title-input"
             placeholder="Nombre del documento..."
           />
+          {/* View Mode Switcher */}
+          <div className="document-view-toggle">
+            <button
+              onClick={() => handleToggleViewMode('visual')}
+              className={`document-view-toggle-btn ${viewMode === 'visual' ? 'active' : ''}`}
+            >
+              Visual
+            </button>
+            <button
+              onClick={() => handleToggleViewMode('html')}
+              className={`document-view-toggle-btn ${viewMode === 'html' ? 'active' : ''}`}
+            >
+              Código HTML
+            </button>
+          </div>
           <div className="document-status-badge">
             {saveStatus === 'saving' && (
               <>
@@ -365,19 +407,37 @@ export default function GroupDocument({
       </div>
 
       {/* Tiptap Google Docs style Toolbar */}
-      <DocumentToolbar
-        editor={editor}
-        onOpenTemplates={() => setShowTemplates(true)}
-        onOpenAI={handleOpenAI}
-        onOpenExpenseLinker={() => setShowExpenseLinker(true)}
-        onExportPDF={handleExportPDF}
-        onUploadImage={handleUploadImage}
-      />
+      {viewMode === 'visual' && (
+        <DocumentToolbar
+          editor={editor}
+          onOpenTemplates={() => setShowTemplates(true)}
+          onOpenAI={handleOpenAI}
+          onOpenExpenseLinker={() => setShowExpenseLinker(true)}
+          onExportPDF={handleExportPDF}
+          onUploadImage={handleUploadImage}
+          onOpenInsertHtml={() => setShowHtmlModal(true)}
+        />
+      )}
 
       {/* Editor Main Canvas workspace */}
       <div className="document-fullscreen-viewport">
-        <div className="document-fullscreen-paper">
-          <EditorContent editor={editor} />
+        <div className="document-fullscreen-paper" style={viewMode === 'html' ? { padding: '24px', display: 'flex', flexDirection: 'column' } : undefined}>
+          {viewMode === 'visual' ? (
+            <EditorContent editor={editor} />
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '12px', padding: '8px 12px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                <Code size={14} style={{ color: 'var(--accent-primary)' }} />
+                <span>Estás editando el código fuente HTML del documento. Los cambios se sincronizarán al volver al modo Visual.</span>
+              </div>
+              <textarea
+                className="document-html-textarea"
+                value={htmlText}
+                onChange={(e) => handleHtmlTextChange(e.target.value)}
+                placeholder="Escribe o pega aquí tu código HTML..."
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -407,6 +467,55 @@ export default function GroupDocument({
           onClose={() => setShowExpenseLinker(false)}
           onSelect={handleSelectExpense}
         />
+      )}
+
+      {/* Insert HTML Modal */}
+      {showHtmlModal && (
+        <div className="doc-modal-overlay">
+          <div className="doc-modal-card" style={{ maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="doc-modal-title">
+                <Code size={18} style={{ color: 'var(--accent-primary)' }} />
+                <span>Insertar Código HTML</span>
+              </span>
+              <button onClick={() => setShowHtmlModal(false)} className="doc-modal-close">
+                <X size={18} />
+              </button>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '-8px' }}>
+              Pega el código HTML que deseas insertar en la posición actual del cursor.
+            </p>
+            <textarea
+              className="document-html-textarea"
+              style={{ minHeight: '200px', fontSize: '0.75rem' }}
+              value={insertedHtml}
+              onChange={(e) => setInsertedHtml(e.target.value)}
+              placeholder="Ej: <div style='color: blue;'>Texto azul</div>..."
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+              <button
+                onClick={() => setShowHtmlModal(false)}
+                className="btn"
+                style={{ padding: '6px 16px', fontSize: '0.72rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (editor && insertedHtml.trim()) {
+                    editor.chain().focus().insertContent(insertedHtml).run();
+                    setInsertedHtml('');
+                    setShowHtmlModal(false);
+                  }
+                }}
+                className="btn"
+                style={{ padding: '6px 16px', fontSize: '0.72rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--accent-primary)', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Insertar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
