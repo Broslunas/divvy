@@ -194,4 +194,28 @@ const CommentSchema = new mongoose.Schema({
 
 export const MongoComment = mongoose.models.Comment || mongoose.model('Comment', CommentSchema);
 
+// Document Schema
+const DocumentSchema = new mongoose.Schema({
+  groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true, unique: true },
+  title: { type: String, default: 'Documento sin título' },
+  content: { type: String, default: '' }, // Stringified Tiptap JSON or HTML
+  lastEditedBy: { type: String, default: '' },
+  lastEditedAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now }
+}, {
+  toJSON: {
+    transform(doc, ret: any) {
+      ret.id = ret._id.toString();
+      ret.groupId = ret.groupId.toString();
+      ret.lastEditedAt = ret.lastEditedAt ? ret.lastEditedAt.toISOString() : new Date().toISOString();
+      ret.createdAt = ret.createdAt ? ret.createdAt.toISOString() : new Date().toISOString();
+      delete ret._id;
+      delete ret.__v;
+    }
+  }
+});
+
+export const MongoDocument = mongoose.models.Document || mongoose.model('Document', DocumentSchema);
+
+
 

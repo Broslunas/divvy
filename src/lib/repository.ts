@@ -1,8 +1,9 @@
 import crypto from 'crypto';
 import { connectDB } from './db';
 import { fallbackDb } from './dbFallback';
-import { MongoUser, MongoGroup, MongoExpense, MongoNotification, MongoPushSubscription, MongoComment } from './models';
-import type { User, Group, Expense, Comment } from '@/types';
+import { MongoUser, MongoGroup, MongoExpense, MongoNotification, MongoPushSubscription, MongoComment, MongoDocument } from './models';
+import type { User, Group, Expense, Comment, GroupDocument } from '@/types';
+
 import type { Notification, PushSubscription } from '@/types/notification';
 
 // Helper to generate a random 8-character invite code
@@ -483,5 +484,83 @@ export const repository = {
         return fallbackDb.comments.delete(id);
       }
     }
+  },
+
+  documents: {
+    async getByGroupId(groupId: string): Promise<GroupDocument | null> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const doc = await MongoDocument.findOne({ groupId });
+          return doc ? (doc.toJSON() as GroupDocument) : null;
+        } catch (e) {
+          console.error('Error fetching document from Mongo:', e);
+          return null;
+        }
+      } else {
+        return fallbackDb.documents.findOne({ groupId });
+      }
+    },
+
+    async upsert(groupId: string, docData: Partial<Omit<GroupDocument, 'id' | 'groupId' | 'createdAt'>>): Promise<GroupDocument> {
+      const isConnected = await connectDB();
+      const now = new Date().toISOString();
+      if (isConnected) {
+        const updated = await MongoDocument.findOneAndUpdate(
+          { groupId },
+          { 
+            $set: { 
+              ...docData, 
+              lastEditedAt: new Date() 
+            },
+            $setOnInsert: { 
+              createdAt: new Date() 
+            }
+          },
+          { new: true, upsert: true }
+        );
+        return updated.toJSON() as GroupDocument;
+      } else {
+        const existing = await fallbackDb.documents.findOne({ groupId });
+        if (existing) {
+          const updated = await fallbackDb.documents.update(existing.id, {
+            ...docData,
+            lastEditedAt: now
+          });
+          return updated!;
+        } else {
+          const id = generateId();
+          const newDoc: GroupDocument = {
+            id,
+            groupId,
+            title: docData.title || 'Documento sin título',
+            content: docData.content || '',
+            lastEditedBy: docData.lastEditedBy || '',
+            lastEditedAt: now,
+            createdAt: now
+          };
+          return fallbackDb.documents.create(newDoc);
+        }
+      }
+    },
+
+    async delete(groupId: string): Promise<boolean> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const result = await MongoDocument.deleteOne({ groupId });
+          return result.deletedCount > 0;
+        } catch {
+          return false;
+        }
+      } else {
+        const existing = await fallbackDb.documents.findOne({ groupId });
+        if (existing) {
+          return fallbackDb.documents.delete(existing.id);
+        }
+        return false;
+      }
+    }
   }
 };
+

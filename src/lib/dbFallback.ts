@@ -1,9 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import type { User, Group, Expense, Comment } from '@/types';
+import type { User, Group, Expense, Comment, GroupDocument } from '@/types';
 import type { Notification, PushSubscription } from '@/types/notification';
 
 const DB_DIR = path.join(process.cwd(), 'data', 'db');
+
 
 // Ensure the directory exists
 function ensureDir() {
@@ -95,5 +96,7 @@ export const fallbackDb = {
   expenses: new JsonCollection<Expense>('expenses.json'),
   notifications: new JsonCollection<Notification>('notifications.json'),
   pushSubscriptions: new JsonCollection<PushSubscription>('push_subscriptions.json'),
-  comments: new JsonCollection<Comment>('comments.json')
+  comments: new JsonCollection<Comment>('comments.json'),
+  documents: new JsonCollection<GroupDocument>('documents.json')
 };
+

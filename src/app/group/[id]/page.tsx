@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import {
@@ -15,7 +15,7 @@ import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import QRInviteModal from '@/components/QRInviteModal';
 import DebtSettlement from '@/components/DebtSettlement';
 import ExpenseCharts from '@/components/ExpenseCharts';
-import GroupNotes from '@/components/GroupNotes';
+import GroupDocument from '@/components/document/GroupDocument';
 import BudgetProgress from '@/components/BudgetProgress';
 import PwaPrompt from '@/components/PwaPrompt';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -57,7 +57,15 @@ interface PageProps {
 
 export default function GroupDetailPage({ params }: PageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id: groupId } = use(params);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['bono', 'gastos', 'liquidar', 'stats', 'notas', 'config'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams]);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [group, setGroup] = useState<Group | null>(null);
@@ -220,20 +228,7 @@ export default function GroupDetailPage({ params }: PageProps) {
     }
   };
 
-  const handleSaveNotes = async (notes: string) => {
-    try {
-      const res = await fetch(`/api/groups/${groupId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes }),
-      });
-      if (!res.ok) throw new Error('No se pudieron guardar las notas');
-      showToast('Notas del tablón guardadas.');
-      await fetchGroupDetails();
-    } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : 'Error al guardar las notas');
-    }
-  };
+
 
   const handleToggleTicketUploaded = async (expenseId: string, currentVal: boolean) => {
     try {
@@ -1237,15 +1232,18 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
           </section>
         )}
 
-        {/* Tab 4: Markdown Notes Tab Board */}
+        {/* Tab 4: Google Docs Document Board */}
         {activeTab === 'notas' && (
           <section className="animate-fade-in">
-            <GroupNotes
-              initialNotes={group.notes || ''}
-              onSaveNotes={handleSaveNotes}
+            <GroupDocument
+              groupId={groupId}
+              expenses={expenses}
+              members={members}
+              currency={group?.currency}
             />
           </section>
         )}
+
 
         {/* Tab 5: Settings / Config */}
         {activeTab === 'config' && (

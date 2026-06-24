@@ -86,3 +86,14 @@ export interface Comment {
   createdAt: string;
 }
 
+export interface GroupDocument {
+  id: string;
+  groupId: string;
+  title: string;
+  content: string;
+  lastEditedBy: string;
+  lastEditedAt: string;
+  createdAt: string;
+}
+
+
