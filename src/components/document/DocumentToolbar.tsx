@@ -2,7 +2,7 @@ import { Editor } from '@tiptap/react';
 import {
   Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter,
   AlignRight, AlignJustify, List, ListOrdered, CheckSquare, Link,
-  Image, Table, Sparkles, FileText, Download, Undo2, Redo2, Quote, Highlighter, ChevronDown
+  Image, Table, Sparkles, FileText, Download, Undo2, Redo2, Quote, Highlighter, ChevronDown, Scissors
 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -274,6 +274,13 @@ export default function DocumentToolbar({
             accept="image/*"
             style={{ display: 'none' }}
           />
+        </button>
+        <button
+          onClick={() => (editor as any).commands.insertPageBreak()}
+          className="toolbar-btn"
+          title="Salto de página (A4)"
+        >
+          <Scissors size={15} />
         </button>
       </div>
 

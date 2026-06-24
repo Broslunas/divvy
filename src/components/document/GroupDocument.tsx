@@ -21,6 +21,7 @@ import { Typography } from '@tiptap/extension-typography';
 import { CloudLightning, FileText, Check, AlertCircle, Edit2, Sparkles } from 'lucide-react';
 
 import { ExpenseBlock } from './extensions/expense-node';
+import { PageBreak } from './extensions/page-break';
 import DocumentToolbar from './DocumentToolbar';
 import DocumentTemplates from './DocumentTemplates';
 import AIGenerateModal from './AIGenerateModal';
@@ -101,7 +102,8 @@ export default function GroupDocument({
       TableHeader,
       TableCell,
       Typography,
-      ExpenseBlock
+      ExpenseBlock,
+      PageBreak
     ],
     content: '<p></p>',
     editable: isEditMode, // Initial editable state based on prop
