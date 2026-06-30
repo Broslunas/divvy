@@ -63,6 +63,7 @@ export async function POST(request: Request) {
       name,
       description,
       members: [user.id], // Owner is the first member
+      creatorId: user.id, // Set the creator
       isBonoCultural: isBono
     };
 

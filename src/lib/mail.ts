@@ -574,5 +574,147 @@ export async function sendGroupDeletionVerificationEmail(
   return sendEmail({ toEmail, toName, subject, html, text });
 }
 
+// 12. Notify when a user is invited to a group
+export async function sendGroupInvitationEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  creatorName: string,
+  inviteCode: string
+) {
+  const subject = `Invitación para unirte al grupo "${groupName}" — Divvy`;
+  const actionUrl = `https://www.divvy.es/join/${inviteCode}`;
+  const text = `Hola ${toName}: ${creatorName} te ha invitado a unirte al grupo "${groupName}" en Divvy. Para aceptar la invitación, haz clic en el siguiente enlace: ${actionUrl}`;
+
+  const bodyContent = `
+    <p class="text">
+      <strong>${creatorName}</strong> te ha invitado a unirte al grupo <strong>"${groupName}"</strong> en Divvy para gestionar y liquidar vuestros gastos compartidos.
+    </p>
+    <div class="info-box" style="border-left-color: #C87A53;">
+      <p style="margin: 0; font-size: 14px; color: #1C1C1E; font-weight: 700;">
+        Grupo: ${groupName}
+      </p>
+      <p style="margin: 6px 0 0 0; font-size: 13px; color: #6E6D6A;">
+        Código de invitación: <strong>${inviteCode}</strong>
+      </p>
+    </div>
+    <p class="text" style="font-size: 13px; color: #6E6D6A;">
+      Haz clic en el botón de abajo para unirte al grupo. Si no tienes una cuenta de Divvy, podrás registrarte para continuar.
+    </p>
+  `;
+
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Unirse al Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 13. Notify user when they are kicked from a group
+export async function sendKickedEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  creatorName: string
+) {
+  const subject = `Has sido eliminado del grupo "${groupName}" — Divvy`;
+  const actionUrl = `https://www.divvy.es/app`;
+  const text = `Hola ${toName}: Te informamos que has sido eliminado del grupo "${groupName}" por el creador del grupo (${creatorName}).`;
+
+  const bodyContent = `
+    <p class="text">
+      Te informamos que has sido eliminado del grupo <strong>"${groupName}"</strong> por el creador del grupo (<strong>${creatorName}</strong>).
+    </p>
+    <p class="text" style="font-size: 13px; color: #6E6D6A;">
+      Ya no tendrás acceso a los gastos, balances ni notas de este grupo. Si crees que se trata de un error, ponte en contacto con el creador del grupo.
+    </p>
+  `;
+
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ir a Mis Grupos');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 14. Notify remaining members when someone leaves the group
+export async function sendMemberLeftEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  leavingName: string,
+  groupId: string
+) {
+  const subject = `Miembro ha salido de "${groupName}" — Divvy`;
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const text = `Hola ${toName}: Te informamos que ${leavingName} ha salido del grupo "${groupName}".`;
+
+  const bodyContent = `
+    <p class="text">
+      Te informamos que <strong>${leavingName}</strong> ha decidido salir del grupo <strong>"${groupName}"</strong>.
+    </p>
+    <p class="text" style="font-size: 13px; color: #6E6D6A;">
+      Los saldos y gastos del grupo se han actualizado correspondientemente. Puedes ver el estado actual pulsando en el botón de abajo.
+    </p>
+  `;
+
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 15. Notify members when ownership is transferred
+export async function sendOwnershipTransferredEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  oldCreatorName: string,
+  newCreatorName: string,
+  groupId: string
+) {
+  const subject = `Cambio de creador en "${groupName}" — Divvy`;
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const text = `Hola ${toName}: Te informamos que la propiedad y el rol de creador del grupo "${groupName}" han sido transferidos de ${oldCreatorName} a ${newCreatorName}.`;
+
+  const bodyContent = `
+    <p class="text">
+      Te informamos que se ha producido un cambio de propiedad en el grupo <strong>"${groupName}"</strong>.
+    </p>
+    <p class="text" style="font-size: 14px; color: #1C1C1E;">
+      El creador original (<strong>${oldCreatorName}</strong>) ha transferido el rol de creador del grupo a <strong>${newCreatorName}</strong>.
+    </p>
+    <p class="text" style="font-size: 13px; color: #6E6D6A;">
+      A partir de ahora, <strong>${newCreatorName}</strong> tendrá los privilegios de administración del grupo, como invitar y expulsar miembros.
+    </p>
+  `;
+
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
+// 16. Notify other members when someone is kicked
+export async function sendMemberKickedEmail(
+  toEmail: string,
+  toName: string,
+  groupName: string,
+  kickedName: string,
+  creatorName: string,
+  groupId: string
+) {
+  const subject = `Miembro eliminado de "${groupName}" — Divvy`;
+  const actionUrl = `https://www.divvy.es/group/${groupId}`;
+  const text = `Hola ${toName}: Te informamos que ${kickedName} ha sido eliminado del grupo "${groupName}" por el creador del grupo (${creatorName}).`;
+
+  const bodyContent = `
+    <p class="text">
+      Te informamos que <strong>${kickedName}</strong> ha sido eliminado del grupo <strong>"${groupName}"</strong> por el creador del grupo (<strong>${creatorName}</strong>).
+    </p>
+    <p class="text" style="font-size: 13px; color: #6E6D6A;">
+      Los saldos y gastos del grupo se han actualizado correspondientemente. Puedes ver el estado actual pulsando en el botón de abajo.
+    </p>
+  `;
+
+  const html = getHtmlTemplate(toName, subject, bodyContent, actionUrl, 'Ver Grupo');
+
+  return sendEmail({ toEmail, toName, subject, html, text });
+}
+
 
 

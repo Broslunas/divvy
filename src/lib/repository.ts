@@ -156,6 +156,28 @@ export const repository = {
       }
     },
 
+    async removeUserFromGroup(groupId: string, userId: string): Promise<Group | null> {
+      const isConnected = await connectDB();
+      if (isConnected) {
+        try {
+          const group = await MongoGroup.findByIdAndUpdate(
+            groupId,
+            { $pull: { members: userId } },
+            { returnDocument: 'after' }
+          );
+          return group ? (group.toJSON() as Group) : null;
+        } catch {
+          return null;
+        }
+      } else {
+        const group = await fallbackDb.groups.getById(groupId);
+        if (!group) return null;
+        return fallbackDb.groups.update(groupId, {
+          members: group.members.filter(id => id !== userId)
+        });
+      }
+    },
+
     async update(id: string, updates: Partial<Group>): Promise<Group | null> {
       const isConnected = await connectDB();
       if (isConnected) {

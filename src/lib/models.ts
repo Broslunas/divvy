@@ -24,6 +24,7 @@ const GroupSchema = new mongoose.Schema({
   description: { type: String },
   inviteCode: { type: String, required: true, unique: true },
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  creatorId: { type: String },
   archivedBy: [{ type: String }],
   budget: { type: Number, default: 0 },
   categoryBudgets: [{
@@ -41,6 +42,7 @@ const GroupSchema = new mongoose.Schema({
     transform(doc, ret: any) {
       ret.id = ret._id.toString();
       ret.members = ret.members.map((m: any) => m.toString());
+      ret.creatorId = ret.creatorId || (ret.members && ret.members[0] ? ret.members[0].toString() : undefined);
       ret.archivedBy = ret.archivedBy || [];
       ret.budget = ret.budget || 0;
       ret.categoryBudgets = ret.categoryBudgets || [];

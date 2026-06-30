@@ -89,6 +89,9 @@ export default function GroupDetailPage({ params }: PageProps) {
   const [settingsTargetDate, setSettingsTargetDate] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
   const [requestingDelete, setRequestingDelete] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
+  const [leavingGroup, setLeavingGroup] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
@@ -315,6 +318,79 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
       showToast(err instanceof Error ? err.message : 'Error al solicitar la eliminación.');
     } finally {
       setRequestingDelete(false);
+    }
+  };
+
+  const handleKickMember = async (memberId: string, username: string) => {
+    if (!confirm(`¿Estás seguro de que quieres expulsar a "${username}" de este grupo?`)) return;
+    try {
+      const res = await fetch(`/api/groups/${groupId}/kick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al expulsar al miembro.');
+      showToast(`"${username}" ha sido expulsado del grupo.`);
+      await fetchGroupDetails();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al expulsar al miembro.');
+    }
+  };
+
+  const handleTransferOwnership = async (newOwnerId: string, username: string) => {
+    if (!confirm(`¿Estás seguro de que quieres transferir la propiedad del grupo a "${username}"? Dejarás de ser el creador y administrador del grupo.`)) return;
+    try {
+      const res = await fetch(`/api/groups/${groupId}/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newOwnerId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al transferir la propiedad.');
+      showToast(`¡Propiedad transferida a "${username}"!`);
+      await fetchGroupDetails();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al transferir la propiedad.');
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!confirm('¿Estás seguro de que quieres salir de este grupo?')) return;
+    setLeavingGroup(true);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al salir del grupo.');
+      showToast('Has salido del grupo.');
+      router.replace('/app');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al salir del grupo.');
+      setLeavingGroup(false);
+    }
+  };
+
+  const handleSendEmailInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    setSendingInvite(true);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al enviar la invitación.');
+      showToast('¡Invitación enviada por correo!');
+      setInviteEmail('');
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error al enviar la invitación.');
+    } finally {
+      setSendingInvite(false);
     }
   };
 
@@ -754,6 +830,8 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
   const totalSpent = expenses
     .filter(e => !e.isSettlement)
     .reduce((sum, e) => sum + e.amount, 0);
+
+  const isCreator = !!(currentUser && group && (group.creatorId ? group.creatorId === currentUser.id : group.members[0] === currentUser.id));
 
   return (
     <>
@@ -1481,52 +1559,156 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
               </button>
             </form>
 
+            {/* Manage Members Section */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '20px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Gestionar Miembros ({members.length})
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {members.map((member) => {
+                  const isMemberCreator = group.creatorId ? group.creatorId === member.id : group.members[0] === member.id;
+                  const isSelf = member.id === currentUser?.id;
+                  return (
+                    <div key={member.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: member.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.85rem', fontWeight: 700 }}>
+                          {member.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {member.username} {isSelf && '(Tú)'}
+                          </span>
+                          {isMemberCreator && (
+                            <span style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                              Creador
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Actions for Group Creator */}
+                      {isCreator && !isMemberCreator && (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleTransferOwnership(member.id, member.username)}
+                            className="btn btn-secondary"
+                            style={{ padding: '6px 10px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', backgroundColor: 'transparent' }}
+                            title="Hacer creador de este grupo"
+                          >
+                            Hacer Creador
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleKickMember(member.id, member.username)}
+                            className="btn btn-secondary"
+                            style={{ padding: '6px 10px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--danger)', color: 'var(--danger)', backgroundColor: 'transparent' }}
+                            title="Expulsar del grupo"
+                          >
+                            Expulsar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Danger Zone */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', borderTop: '1px solid #FFC9C9', backgroundColor: 'rgba(255, 0, 0, 0.01)', borderRadius: 'var(--radius-md)', padding: '20px' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 Zona de Peligro
               </span>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                Al eliminar este grupo, se borrará definitivamente toda la información, incluyendo los gastos, balances, notas e imágenes asociadas. Esta acción requiere verificación por correo.
-              </p>
-              
-              <button
-                type="button"
-                disabled={requestingDelete}
-                onClick={handleDeleteGroup}
-                className="btn btn-secondary"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '12px',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  borderColor: 'var(--danger)',
-                  color: 'var(--danger)',
-                  backgroundColor: 'transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  marginTop: '8px'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                {requestingDelete ? (
-                  <>
-                    <Loader2 className="animate-spin" size={14} /> Solicitando...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={14} /> Eliminar Grupo
-                  </>
-                )}
-              </button>
+              {isCreator ? (
+                <>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    Al eliminar este grupo, se borrará definitivamente toda la información, incluyendo los gastos, balances, notas e imágenes asociadas. Esta acción requiere verificación por correo.
+                  </p>
+                  
+                  <button
+                    type="button"
+                    disabled={requestingDelete}
+                    onClick={handleDeleteGroup}
+                    className="btn btn-secondary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      borderColor: 'var(--danger)',
+                      color: 'var(--danger)',
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      marginTop: '8px'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    {requestingDelete ? (
+                      <>
+                        <Loader2 className="animate-spin" size={14} /> Solicitando...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={14} /> Eliminar Grupo
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    Si abandonas este grupo, dejarás de tener acceso a los gastos compartidos, balances y notas. No podrás volver a unirte a menos que te vuelvan a invitar.
+                  </p>
+                  
+                  <button
+                    type="button"
+                    disabled={leavingGroup}
+                    onClick={handleLeaveGroup}
+                    className="btn btn-secondary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      borderColor: 'var(--danger)',
+                      color: 'var(--danger)',
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      marginTop: '8px'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    {leavingGroup ? (
+                      <>
+                        <Loader2 className="animate-spin" size={14} /> Saliendo...
+                      </>
+                    ) : (
+                      <>
+                        <X size={14} /> Salir del Grupo
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Invite Info Box */}
@@ -1538,7 +1720,7 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
                 Comparte el código o envía el enlace de invitación directa:
               </p>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>CÓDIGO</span>
@@ -1566,6 +1748,32 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
                 >
                   <QrCode size={14} /> Mostrar Código QR de Invitación
                 </button>
+
+                {/* Email invitation form for creator */}
+                {isCreator && (
+                  <form onSubmit={handleSendEmailInvite} style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid var(--border-light)', paddingTop: '12px', marginTop: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>O invitar directamente por correo electrónico:</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="email"
+                        placeholder="correo@ejemplo.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        required
+                        style={{ flex: 1, padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '0.82rem', outline: 'none', backgroundColor: 'var(--bg-primary)' }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={sendingInvite}
+                        className="btn btn-primary"
+                        style={{ padding: '9px 16px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        {sendingInvite ? <Loader2 size={14} className="animate-spin" /> : null}
+                        {sendingInvite ? 'Enviando...' : 'Invitar'}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           </section>

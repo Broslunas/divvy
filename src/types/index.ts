@@ -18,6 +18,7 @@ export interface Group {
   description?: string;
   inviteCode: string;
   members: string[]; // User IDs
+  creatorId?: string; // Creator/owner user ID
   archivedBy?: string[]; // User IDs who archived this group
   budget?: number; // Total group budget limit
   categoryBudgets?: CategoryBudget[];
