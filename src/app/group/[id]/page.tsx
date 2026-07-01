@@ -9,7 +9,7 @@ import {
   Search, SlidersHorizontal, FileSpreadsheet,
   Utensils, Car, Home, ShoppingBag, Ticket, Package, FileCode, Settings,
   ChevronRight, Music, BookOpen, Laptop, Printer, ImageIcon, X, Upload, Bell, Pencil,
-  QrCode
+  QrCode, Camera
 } from 'lucide-react';
 import AddExpenseWizard from '@/components/expense/AddExpenseWizard';
 import QRInviteModal from '@/components/QRInviteModal';
@@ -953,7 +953,7 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
         {/* Tabs */}
         <div 
           className={styles.tabs} 
-          style={{ gridTemplateColumns: group.isBonoCultural ? 'repeat(4, 1fr)' : 'repeat(5, 1fr)' }}
+          style={{ gridTemplateColumns: group.isBonoCultural ? 'repeat(5, 1fr)' : 'repeat(6, 1fr)' }}
         >
           {group.isBonoCultural && (
             <button className={`${styles.tabBtn} ${activeTab === 'bono' ? styles.active : ''}`} onClick={() => setActiveTab('bono')}>
@@ -976,6 +976,22 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
               Notas
             </button>
           )}
+          {/* Fotos tab — links to photos.divvy.es */}
+          <button
+            className={styles.tabBtn}
+            onClick={() => {
+              const photosBase = process.env.NEXT_PUBLIC_PHOTOS_URL ||
+                (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+                  ? 'http://localhost:3001'
+                  : 'https://photos.divvy.es');
+              window.open(`${photosBase}/group/${groupId}`, '_blank');
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}
+            title="Álbum de fotos del grupo"
+          >
+            <Camera size={13} />
+            Fotos
+          </button>
           <button className={`${styles.tabBtn} ${activeTab === 'config' ? styles.active : ''}`} onClick={() => setActiveTab('config')}>
             Ajustes
           </button>
