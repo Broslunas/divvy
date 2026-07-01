@@ -14,8 +14,14 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: { userId: string }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+export function signToken(payload: { userId: string; handoff?: boolean }, expiresIn: string | number = '7d'): string {
+  const options: jwt.SignOptions = {};
+  if (typeof expiresIn === 'number') {
+    options.expiresIn = expiresIn; // seconds
+  } else {
+    options.expiresIn = expiresIn;
+  }
+  return jwt.sign(payload, JWT_SECRET, options);
 }
 
 export function verifyToken(token: string): { userId: string } | null {
