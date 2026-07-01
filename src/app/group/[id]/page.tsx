@@ -976,14 +976,14 @@ Esta acción requiere verificación. Se te enviará un correo con un enlace para
               Notas
             </button>
           )}
-          {/* Fotos tab — links to photos.divvy.es */}
+          {/* Fotos tab — links to album.divvy.es */}
           <button
             className={styles.tabBtn}
             onClick={() => {
               const photosBase = process.env.NEXT_PUBLIC_PHOTOS_URL ||
                 (typeof window !== 'undefined' && window.location.hostname === 'localhost'
                   ? 'http://localhost:3001'
-                  : 'https://photos.divvy.es');
+                  : 'https://album.divvy.es');
               window.open(`${photosBase}/group/${groupId}`, '_blank');
             }}
             style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}
