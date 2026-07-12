@@ -15,12 +15,9 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 export function signToken(payload: { userId: string; handoff?: boolean }, expiresIn: string | number = '7d'): string {
-  const options: jwt.SignOptions = {};
-  if (typeof expiresIn === 'number') {
-    options.expiresIn = expiresIn; // seconds
-  } else {
-    options.expiresIn = expiresIn;
-  }
+  const options: jwt.SignOptions = {
+    expiresIn: expiresIn as any
+  };
   return jwt.sign(payload, JWT_SECRET, options);
 }
 
