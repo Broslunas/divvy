@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -80,6 +81,11 @@ export default function RootLayout({
         <Header />
         {children}
         <CookieConsent />
+        <Script
+          defer
+          src="https://analytics.broslunas.com/script.js"
+          data-website-id="0590481e-5f52-4a6b-aed2-bccc19c393ec"
+        />
       </body>
     </html>
   );
