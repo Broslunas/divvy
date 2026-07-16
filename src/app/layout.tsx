@@ -85,6 +85,7 @@ export default function RootLayout({
           defer
           src="https://analytics.broslunas.com/script.js"
           data-website-id="0590481e-5f52-4a6b-aed2-bccc19c393ec"
+          data-performance="true"
         />
       </body>
     </html>
